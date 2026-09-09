@@ -158,8 +158,9 @@ export const createChallenge = (): ChallengeResponse => {
             size: 5,
             noise: 2,
             ignoreChars: '0oO1ilIjJQq',
+            // NB: svg-captcha forces random colours when `background` is set, so the
+            // light background is applied by the client container instead.
             color: false,
-            background: '#f4f4f5',
             width: 260,
             height: 84,
             fontSize: 64,
