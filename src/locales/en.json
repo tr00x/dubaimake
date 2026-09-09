@@ -381,7 +381,8 @@
     "customs": "Customs",
     "copyright": "© {{year}} Mashyn Bazar. All rights reserved.",
     "globe_caption": "From Dubai to your city",
-    "globe_sub": "Delivery across the CIS, the Caucasus and the Gulf"
+    "globe_sub": "Delivery across the CIS, the Caucasus and the Gulf",
+    "globe_route": "Dubai → {{city}} · {{distance}} km"
   },
   "contact": {
     "title": "Our Contacts",
@@ -521,5 +522,18 @@
     "drag_hint": "Drag to rotate",
     "swipe_hint": "Swipe to rotate · tap a car to open it",
     "open": "Open"
+  },
+  "cities": {
+    "dubai": "Dubai",
+    "almaty": "Almaty",
+    "astana": "Astana",
+    "tashkent": "Tashkent",
+    "bishkek": "Bishkek",
+    "baku": "Baku",
+    "moscow": "Moscow",
+    "tbilisi": "Tbilisi",
+    "dushanbe": "Dushanbe",
+    "ashgabat": "Ashgabat",
+    "riyadh": "Riyadh"
   }
 }

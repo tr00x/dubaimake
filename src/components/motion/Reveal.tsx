@@ -1,5 +1,5 @@
-import React from "react";
-import { motion, useReducedMotion, type Variants, type HTMLMotionProps } from "framer-motion";
+import React, { useRef } from "react";
+import { motion, useInView, useReducedMotion, type Variants, type HTMLMotionProps } from "framer-motion";
 
 /**
  * Shared motion primitives.
@@ -81,13 +81,13 @@ export function Stagger({ children, stagger = 0.07, delayChildren = 0.04, amount
     hidden: {},
     visible: { transition: { staggerChildren: stagger, delayChildren } },
   };
+  // Drive the state with `animate` (not `whileInView`): once the group has revealed it stays
+  // "visible", so children that mount later (filtered lists, async data, "show more") animate in
+  // instead of being stuck at their hidden variant.
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once, amount, margin: VIEWPORT.margin as any });
   return (
-    <motion.div
-      initial="hidden"
-      {...(onMount ? { animate: "visible" } : { whileInView: "visible", viewport: { once, amount, margin: VIEWPORT.margin } })}
-      variants={container}
-      {...rest}
-    >
+    <motion.div ref={ref} initial="hidden" animate={onMount || inView ? "visible" : "hidden"} variants={container} {...rest}>
       {children}
     </motion.div>
   );

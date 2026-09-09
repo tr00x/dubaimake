@@ -20,7 +20,7 @@ export default function Footer() {
       <div className="container-x pt-16 pb-8 md:pt-20">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           {/* Brand */}
-          <div className="flex flex-col gap-6 lg:col-span-4">
+          <div className="flex flex-col gap-6 lg:col-span-3">
             <Link to="/" className="inline-block w-28">
               <LogoIcon className="block h-auto w-full brightness-0 invert" />
             </Link>
@@ -31,16 +31,7 @@ export default function Footer() {
           </div>
 
           {/* Nav */}
-          {/* Living globe: Dubai and the delivery destinations */}
-          <div className="flex flex-col items-center gap-3 lg:col-span-3">
-            <Globe className="max-w-[260px]" />
-            <div className="text-center">
-              <p className="text-sm font-semibold text-white">{t("footer.globe_caption")}</p>
-              <p className="text-xs text-white/50">{t("footer.globe_sub")}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-5 lg:col-span-2">
+          <div className="flex flex-col gap-5 lg:col-span-2 lg:col-start-5">
             <span className="text-xs font-bold uppercase tracking-widest text-white/40">{t("footer.company")}</span>
             <nav className="flex flex-col gap-3" aria-label={t("footer.company")}>
               {NAV_LINKS.map((link) => (
@@ -78,6 +69,10 @@ export default function Footer() {
                 {t("header.working_hours")} · {t("header.sunday_off")}
               </p>
             </div>
+          </div>
+          {/* Living globe: Dubai and the delivery destinations */}
+          <div className="flex justify-center lg:col-span-3 lg:justify-end">
+            <Globe className="w-full max-w-[300px]" />
           </div>
         </div>
 
