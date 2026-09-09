@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Phone, Mail } from "lucide-react";
 import { LogoIcon } from "./ui/Icons";
+import Wordmark from "./Wordmark";
 
 const NAV_LINKS = [
   { key: "header.youtube", href: "/#youtube" },
@@ -75,6 +76,9 @@ export default function Footer() {
           <p>{t("footer.copyright", { year })}</p>
           <p>Mashyn Bazar · Dubai</p>
         </div>
+      </div>
+      <div className="container-x pt-12 pb-6 md:pt-16 md:pb-8">
+        <Wordmark />
       </div>
     </footer>
   );

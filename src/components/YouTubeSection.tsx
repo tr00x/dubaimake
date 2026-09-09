@@ -598,7 +598,7 @@ export default function YouTubeSection() {
       <AnimatePresence>
         {player && (
           <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-20 sm:p-6 sm:pt-24"
             role="dialog"
             aria-modal="true"
             aria-label={t("youtube.fallback_title")}
@@ -608,23 +608,24 @@ export default function YouTubeSection() {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             <motion.div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={() => setPlayer(null)} aria-hidden="true" />
+            {/* Close sits outside the player so it never covers YouTube's own controls */}
+            <button
+              type="button"
+              onClick={() => setPlayer(null)}
+              className="icon-btn absolute right-4 top-4 z-10 h-12 w-12 border-white/20 bg-white/10 text-white backdrop-blur-md hover:bg-white hover:text-ink sm:right-6 sm:top-6"
+              aria-label={t("header.close")}
+            >
+              <X className="h-5 w-5" />
+            </button>
             <motion.div
               className={`relative overflow-hidden rounded-3xl bg-black shadow-xl ${
-                player.vertical ? "aspect-[9/16] h-[min(85vh,860px)] max-w-full" : "aspect-video w-full max-w-[960px]"
+                player.vertical ? "aspect-[9/16] h-[min(82vh,860px)] max-w-full" : "aspect-video w-full max-w-[960px]"
               }`}
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               transition={{ duration: 0.35, ease: EASE }}
             >
-              <button
-                type="button"
-                onClick={() => setPlayer(null)}
-                className="icon-btn absolute right-3 top-3 z-10 border-white/20 bg-black/60 text-white hover:bg-white hover:text-ink"
-                aria-label={t("header.close")}
-              >
-                <X className="h-4 w-4" />
-              </button>
               <iframe
                 src={embedSrc(player.id)}
                 title={t("youtube.fallback_title")}

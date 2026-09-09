@@ -112,6 +112,69 @@ const itemVariants: Variants = {
   }
 };
 
+/**
+ * Gallery image without flicker. Two persistent layers: the visible one never changes `src`
+ * (so the browser never clears it); the next photo loads on the hidden layer, is raised on top
+ * and fades in (180ms) once it has loaded. Nothing scales, nothing fades out.
+ */
+function LayeredImage({ src, alt }: { src: string; alt: string }) {
+  const [layers, setLayers] = useState<[string, string]>([src, ""]);
+  const [front, setFront] = useState<0 | 1>(0);
+  const [incomingLoaded, setIncomingLoaded] = useState(false);
+  const incoming: 0 | 1 = front === 0 ? 1 : 0;
+  const pending = layers[incoming] !== "" && layers[incoming] !== layers[front];
+
+  useEffect(() => {
+    if (src === layers[front]) {
+      // Same photo requested again (e.g. cancelled flip): drop any pending load.
+      if (layers[incoming] !== "") setLayers((l) => (front === 0 ? [l[0], ""] : ["", l[1]]));
+      return;
+    }
+    if (src !== layers[incoming]) {
+      setIncomingLoaded(false);
+      setLayers((l) => (incoming === 0 ? [src, l[1]] : [l[0], src]));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
+
+  const promote = () => {
+    if (!pending) return;
+    setFront(incoming);
+    setIncomingLoaded(false);
+  };
+
+  return (
+    <>
+      {([0, 1] as const).map((i) => {
+        const isFront = i === front;
+        const url = layers[i];
+        if (!url) return null;
+        const visible = isFront || (pending && incomingLoaded);
+        return (
+          <img
+            key={i}
+            src={url}
+            alt={isFront ? alt : ""}
+            aria-hidden={!isFront}
+            draggable={false}
+            onLoad={() => {
+              if (!isFront) setIncomingLoaded(true);
+            }}
+            onError={() => {
+              if (!isFront) promote();
+            }}
+            onTransitionEnd={() => {
+              if (!isFront && incomingLoaded) promote();
+            }}
+            className="absolute inset-0 h-full w-full object-cover transition-opacity duration-[180ms] ease-out"
+            style={{ opacity: visible ? 1 : 0, zIndex: isFront ? 1 : 2 }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export default function CarPage() {
   const { t, i18n } = useTranslation();
   const { slug } = useParams(); // Using ID as slug
@@ -119,9 +182,6 @@ export default function CarPage() {
   const [similarCars, setSimilarCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  // Index of the image currently painted; lags behind activeImageIndex until the next image is decoded,
-  // so flipping never shows an empty frame while the network loads.
-  const [shownIndex, setShownIndex] = useState(0);
   const [showSticky, setShowSticky] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
 
@@ -204,7 +264,6 @@ export default function CarPage() {
         .then(res => {
           setCar(res.data);
           setActiveImageIndex(0); // Reset image index on car change
-          setShownIndex(0);
         })
         .catch(err => console.error("Failed to fetch car", err))
         .finally(() => setLoading(false));
@@ -228,27 +287,18 @@ export default function CarPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Preload the requested image (and its neighbours) before crossfading to it.
+  // Warm the browser cache for the neighbouring photos so flipping is instant in both directions.
   const imageUrls = car?.images?.length ? car.images.map(i => i.pathOrUrl) : [imgBmwM5Competition];
   useEffect(() => {
-    let cancelled = false;
-    const target = imageUrls[activeImageIndex];
-    if (!target) return;
-    const preload = (src: string) => {
-      const img = new Image();
-      img.src = src;
-      return img.decode ? img.decode().catch(() => undefined) : Promise.resolve();
-    };
-    preload(target).finally(() => {
-      if (!cancelled) setShownIndex(activeImageIndex);
-    });
-    const next = imageUrls[(activeImageIndex + 1) % imageUrls.length];
-    const prev = imageUrls[(activeImageIndex - 1 + imageUrls.length) % imageUrls.length];
-    if (next) void preload(next);
-    if (prev && prev !== next) void preload(prev);
-    return () => {
-      cancelled = true;
-    };
+    const n = imageUrls.length;
+    if (n < 2) return;
+    for (const offset of [1, -1, 2]) {
+      const src = imageUrls[(activeImageIndex + offset + n) % n];
+      if (src) {
+        const img = new Image();
+        img.src = src;
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeImageIndex, car?.id]);
 
@@ -421,18 +471,7 @@ export default function CarPage() {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <AnimatePresence initial={false} mode="sync">
-            <motion.img
-              key={shownIndex}
-              src={images[shownIndex]}
-              alt={title}
-              className="absolute inset-0 h-full w-full object-cover"
-              initial={{ opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.45, ease: EASE }}
-            />
-          </AnimatePresence>
+          <LayeredImage src={images[activeImageIndex]} alt={title} />
 
           <button
             type="button"

@@ -488,6 +488,54 @@
     background-size: 160px 160px;
   }
 
+  /* Footer wordmark */
+  .wordmark { font-variation-settings: "wght" 500; }
+  .wordmark-letter {
+    color: rgb(255 255 255 / 0.06);
+    -webkit-text-stroke: 1px rgb(255 255 255 / 0.32);
+    font-variation-settings: "wght" 500;
+    transition:
+      color 0.35s ease,
+      -webkit-text-stroke-color 0.35s ease,
+      font-variation-settings 0.45s var(--ease-out-expo),
+      transform 0.5s var(--ease-out-expo);
+    will-change: transform;
+  }
+  .wordmark-letter[data-d="0"] {
+    color: #fff;
+    -webkit-text-stroke-color: transparent;
+    font-variation-settings: "wght" 860;
+    transform: translateY(-6%);
+  }
+  .wordmark-letter[data-d="1"] {
+    color: rgb(255 255 255 / 0.6);
+    -webkit-text-stroke-color: rgb(255 255 255 / 0.1);
+    font-variation-settings: "wght" 700;
+    transform: translateY(-3%);
+  }
+  .wordmark-letter[data-d="2"] {
+    color: rgb(255 255 255 / 0.28);
+    font-variation-settings: "wght" 600;
+    transform: translateY(-1%);
+  }
+  .wordmark-letter:active { transform: translateY(-6%) scale(1.06); }
+  .wordmark-dot { color: var(--brand); font-variation-settings: "wght" 700; }
+
+  /* No pointer (phones): a slow wave sweeps across the letters by itself */
+  @media (hover: none) {
+    .wordmark-letter {
+      animation: wordmark-wave 5.5s ease-in-out infinite;
+      animation-delay: calc(var(--i, 0) * 0.13s);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wordmark-letter { animation: none; }
+  }
+  @keyframes wordmark-wave {
+    0%, 22%, 100% { color: rgb(255 255 255 / 0.06); -webkit-text-stroke-color: rgb(255 255 255 / 0.32); font-variation-settings: "wght" 500; transform: translateY(0); }
+    8% { color: #fff; -webkit-text-stroke-color: transparent; font-variation-settings: "wght" 860; transform: translateY(-5%); }
+  }
+
   /* Skeleton */
   .skeleton {
     position: relative;

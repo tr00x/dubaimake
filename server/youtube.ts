@@ -391,8 +391,18 @@ const saveToDisk = (data: YtFeed) => {
     }
 };
 
+// Ops knob: YOUTUBE_DISABLE_SCRAPE=1 skips the HTML tabs and builds the feed from RSS only
+// (dates, views, shorts detection via redirect). Also exercised by tests as the failure path.
+const scrapeDisabled = () => process.env.YOUTUBE_DISABLE_SCRAPE === '1';
+
 const buildFeed = async (): Promise<YtFeed> => {
-    const [videosRes, shortsRes, rssRes] = await Promise.allSettled([scrapeVideosTab(), scrapeShortsTab(), fetchRss()]);
+    const disabled = scrapeDisabled();
+    const skip = () => Promise.reject(new Error('scraping disabled'));
+    const [videosRes, shortsRes, rssRes] = await Promise.allSettled([
+        disabled ? skip() : scrapeVideosTab(),
+        disabled ? skip() : scrapeShortsTab(),
+        fetchRss(),
+    ]);
     const sources: string[] = [];
 
     const rss = rssRes.status === 'fulfilled' ? rssRes.value : [];
@@ -417,16 +427,21 @@ const buildFeed = async (): Promise<YtFeed> => {
         sources.push('videos');
     } else {
         console.warn('[youtube] videos tab failed:', (videosRes.reason as Error)?.message);
-        // Fallback: RSS minus shorts
+        // Fallback: new uploads from RSS (minus shorts) in front of whatever we showed last time,
+        // so a markup change on YouTube never empties the block and new videos still appear.
         const candidates = rss.filter((e) => !shortIds.has(e.id));
         const flags = await Promise.all(candidates.map((e) => (shortsRes.status === 'fulfilled' ? Promise.resolve(false) : isShortById(e.id))));
-        videos = candidates
+        const fromRss: YtVideo[] = candidates
             .filter((_, i) => !flags[i])
             .map((e) => ({ id: e.id, title: e.title, thumbnail: bestThumb(e.id), views: e.views, publishedAt: e.publishedAt, url: `https://www.youtube.com/watch?v=${e.id}` }));
+        const known = new Set(fromRss.map((v) => v.id));
+        videos = [...fromRss, ...(feed?.videos || []).filter((v) => !known.has(v.id))];
         if (shortsRes.status !== 'fulfilled') {
-            shorts = candidates
+            const rssShorts: YtShort[] = candidates
                 .filter((_, i) => flags[i])
                 .map((e) => ({ id: e.id, title: e.title, thumbnail: `https://i.ytimg.com/vi/${e.id}/oardefault.jpg`, views: e.views, publishedAt: e.publishedAt, url: `https://www.youtube.com/shorts/${e.id}` }));
+            const knownShorts = new Set(rssShorts.map((s) => s.id));
+            shorts = [...rssShorts, ...(feed?.shorts || []).filter((s) => !knownShorts.has(s.id))];
         }
     }
 
@@ -476,9 +491,15 @@ export const refreshFeed = (): Promise<YtFeed | null> => {
 const isFresh = () => !!feed && Date.now() - new Date(feed.updatedAt).getTime() < FRESH_MS;
 
 /** Returns cached data immediately (refreshing in the background if stale) or waits for the first load. */
+let lastStaleWarning = 0;
 export const getFeed = async (): Promise<YtFeed | null> => {
     if (feed) {
         if (!isFresh()) void refreshFeed();
+        const age = Date.now() - new Date(feed.updatedAt).getTime();
+        if (age > 6 * 60 * 60 * 1000 && Date.now() - lastStaleWarning > 60 * 60 * 1000) {
+            lastStaleWarning = Date.now();
+            console.warn(`[youtube] feed is stale (${Math.round(age / 3.6e6)}h old) — every refresh has been failing`);
+        }
         return feed;
     }
     return refreshFeed();
