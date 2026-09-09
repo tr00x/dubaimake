@@ -509,5 +509,9 @@
   "color_red": "Red",
   "color_green": "Green",
   "color_brown": "Brown",
-  "color_beige": "Beige"
+  "color_beige": "Beige",
+  "pwa": {
+    "update_available": "A new version of the site is available.",
+    "update_action": "Refresh"
+  }
 }

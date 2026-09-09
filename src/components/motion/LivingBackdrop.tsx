@@ -135,7 +135,7 @@ export default function LivingBackdrop({ className = "", rings = 14, seed = 7 }:
           className={`absolute inset-0 h-full w-full text-brand ${reduced ? "" : "motion-safe:animate-drift"}`}
           style={{ animationDuration: "70s" }}
         >
-          <g fill="none" stroke="currentColor" strokeWidth="1.25" strokeOpacity="0.7" vectorEffect="non-scaling-stroke">
+          <g fill="none" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.5" vectorEffect="non-scaling-stroke">
             {contours.map((d, i) => (
               <path key={i} d={d} strokeDasharray={i % 4 === 3 ? "6 10" : undefined} />
             ))}

@@ -13,14 +13,20 @@ import CarEditor from "./admin/CarEditor";
 import AdminSettings from "./admin/AdminSettings";
 import TranslationEditor from "./admin/TranslationEditor";
 import { registerSW } from 'virtual:pwa-register';
-import "./i18n";
+import { toast } from "sonner";
+import i18n from "./i18n";
 import "./styles/globals.css";
 
+// New build available: offer a one-tap refresh instead of a native confirm() dialog.
 const updateSW = registerSW({
   onNeedRefresh() {
-    if (confirm('Доступно новое обновление. Обновить?')) {
-      updateSW(true);
-    }
+    toast(i18n.t("pwa.update_available"), {
+      duration: Infinity,
+      action: {
+        label: i18n.t("pwa.update_action"),
+        onClick: () => updateSW(true),
+      },
+    });
   },
   onOfflineReady() {
     console.log('App ready to work offline');
