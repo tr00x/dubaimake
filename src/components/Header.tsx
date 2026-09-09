@@ -1,175 +1,293 @@
-import React, { useEffect, useState } from "react";
-import { Search, Menu, Phone, Car, FileText, Youtube, MapPin, Clock, Mail } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Search, Menu, Phone, Car, FileText, Youtube, MapPin, Clock, Mail, ArrowUpRight, X } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "./ui/sheet";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "./ui/sheet";
 import { LogoIcon } from "./ui/Icons";
+import { EASE } from "./motion/Reveal";
+
+const NAV = [
+  { key: "header.youtube", href: "/#youtube", icon: Youtube },
+  { key: "header.catalog", href: "/#catalog", icon: Car },
+  { key: "header.services", href: "/#services", icon: FileText },
+  { key: "header.contacts", href: "/#contacts", icon: Phone },
+] as const;
 
 export default function Header() {
   const { t, i18n } = useTranslation();
-  const [scrolled, setScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const reduced = useReducedMotion();
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language.startsWith('ru') ? 'en' : 'ru');
-  };
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 0);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      navigate(`/catalog?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
-  const navLinks = [
-    { name: t('header.youtube'), href: "/#youtube", icon: Youtube },
-    { name: t('header.catalog'), href: "/#catalog", icon: Car },
-    { name: t('header.services'), href: "/#services", icon: FileText },
-    { name: t('header.contacts'), href: "/#contacts", icon: Phone },
-  ];
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const lastY = useRef(0);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const isHome = location.pathname === "/";
+  const isRu = i18n.language.startsWith("ru");
+  // Over the hero video the header is transparent with light text.
+  const onDark = isHome && !scrolled;
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      // Hide when scrolling down past the hero, show as soon as the user scrolls up.
+      const goingDown = y > lastY.current && y > 320;
+      setHidden(goingDown && !menuOpen && !searchOpen);
+      lastY.current = y;
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [menuOpen, searchOpen]);
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  const toggleLanguage = () => i18n.changeLanguage(isRu ? "en" : "ru");
+
+  const submitSearch = () => {
+    const q = searchQuery.trim();
+    navigate(q ? `/catalog?q=${encodeURIComponent(q)}` : "/catalog");
+    setSearchOpen(false);
+  };
+
+  const textColor = onDark ? "text-white" : "text-foreground";
+  const mutedColor = onDark ? "text-white/70" : "text-muted-foreground";
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isHome 
-          ? (scrolled 
-              ? "translate-y-0 bg-background/90 backdrop-blur-md border-b border-border" 
-              : "-translate-y-full bg-transparent border-transparent")
-          : "translate-y-0 bg-background/90 backdrop-blur-md border-b border-border"
+    <motion.header
+      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-500 ${
+        scrolled || !isHome
+          ? "bg-background/80 backdrop-blur-xl border-b border-border/80 supports-[backdrop-filter]:bg-background/70"
+          : "bg-transparent border-b border-transparent"
       }`}
+      initial={false}
+      animate={{ y: hidden ? "-100%" : "0%" }}
+      transition={{ duration: reduced ? 0 : 0.5, ease: EASE }}
     >
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 py-3 md:py-4 flex items-center justify-between gap-4">
-        {/* Left: Logo */}
-        <Link 
-          to="/" 
-          className="shrink-0 hover:opacity-80 transition-opacity"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      <div className="container-x flex h-[72px] items-center justify-between gap-4 md:h-20">
+        {/* Logo */}
+        <Link
+          to="/"
+          aria-label="MashynBazar"
+          className="group/logo relative flex shrink-0 items-center"
+          onClick={(e) => {
+            if (isHome) {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+              navigate("/", { replace: true });
+            }
+          }}
         >
-          <div className="h-[32px] md:h-[40px] relative shrink-0 w-auto aspect-[96/40]">
+          <div
+            className={`h-8 w-auto aspect-[96/40] transition-[filter,opacity] duration-500 md:h-10 ${
+              onDark ? "brightness-0 invert" : ""
+            } group-hover/logo:opacity-80`}
+          >
             <LogoIcon className="block size-full" />
           </div>
         </Link>
 
-        {/* Center: Desktop Navigation */}
-        <nav className="flex max-md:hidden items-center gap-6 lg:gap-8">
-          {navLinks.map((link) => (
-            <Link 
-              key={link.name}
-              to={link.href} 
-              className="flex items-center gap-2 text-sm lg:text-base font-medium text-foreground hover:text-destructive transition-colors"
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
+          {NAV.map((item) => (
+            <Link
+              key={item.key}
+              to={item.href}
+              className={`group/nav relative px-3.5 py-2 text-[15px] font-semibold tracking-[-0.005em] transition-colors duration-300 ${textColor} hover:opacity-100`}
             >
-              <link.icon className="w-4 h-4" />
-              {link.name}
+              <span className={`transition-opacity duration-300 ${onDark ? "opacity-90 group-hover/nav:opacity-100" : "opacity-80 group-hover/nav:opacity-100"}`}>
+                {t(item.key)}
+              </span>
+              <span
+                aria-hidden="true"
+                className={`absolute inset-x-3.5 -bottom-0.5 h-[2px] origin-left scale-x-0 rounded-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/nav:scale-x-100 ${
+                  onDark ? "bg-white" : "bg-brand"
+                }`}
+              />
             </Link>
           ))}
         </nav>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-3 md:gap-4 flex-1 md:flex-none justify-end">
-          {/* Language Switcher */}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={toggleLanguage}
-            className="w-10 h-10 rounded-xl hover:bg-secondary font-medium"
-          >
-            {i18n.language.startsWith('ru') ? 'RU' : 'EN'}
-          </Button>
-
-          {/* Search */}
-          <div className="flex gap-2 h-10 md:h-11 items-center px-3 md:px-4 bg-secondary/50 rounded-xl border border-transparent hover:border-border hover:bg-background transition-all flex-1 md:flex-none md:w-48 lg:w-60 group cursor-text focus-within:border-ring focus-within:bg-background">
-            <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
-            <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearch}
-                placeholder="Поиск..." 
-                className="bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground w-full min-w-[50px]"
-            />
+        {/* Actions */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Search (desktop: expanding field) */}
+          <div className="hidden items-center md:flex">
+            <AnimatePresence initial={false}>
+              {searchOpen && (
+                <motion.div
+                  key="search"
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 240, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: reduced ? 0 : 0.45, ease: EASE }}
+                  className="overflow-hidden"
+                >
+                  <input
+                    ref={searchRef}
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitSearch();
+                      if (e.key === "Escape") setSearchOpen(false);
+                    }}
+                    onBlur={() => !searchQuery && setSearchOpen(false)}
+                    placeholder={t("header.search_placeholder")}
+                    aria-label={t("header.search_placeholder")}
+                    className={`h-11 w-[240px] rounded-xl border px-4 text-sm outline-none transition-colors ${
+                      onDark
+                        ? "border-white/25 bg-white/10 text-white placeholder:text-white/60 backdrop-blur-md"
+                        : "border-border bg-input-background text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-ink"
+                    }`}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={() => (searchOpen ? submitSearch() : setSearchOpen(true))}
+              aria-label={t("header.search_placeholder")}
+              className={`ml-1 flex h-11 w-11 items-center justify-center rounded-xl transition-colors duration-300 ${
+                onDark ? "text-white hover:bg-white/10" : "text-foreground hover:bg-secondary"
+              }`}
+            >
+              <Search className="h-[18px] w-[18px]" />
+            </button>
           </div>
 
-          {/* Desktop/Mobile CTA */}
-          <Link 
-            to="/catalog" 
-            className="flex bg-primary text-primary-foreground h-10 md:h-11 px-3 md:px-5 rounded-xl items-center gap-2 hover:bg-red-600 active:scale-95 transition-all shrink-0"
+          {/* Language */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            aria-label={t("header.language")}
+            className={`flex h-11 items-center gap-1 rounded-xl px-3 text-[13px] font-bold tracking-wide transition-colors duration-300 ${
+              onDark ? "text-white hover:bg-white/10" : "text-foreground hover:bg-secondary"
+            }`}
           >
-             <Car className="w-4 h-4" />
-             <span className="hidden md:inline text-sm font-medium">Каталог</span>
+            <span className={isRu ? "" : "opacity-40"}>RU</span>
+            <span className={`${mutedColor} font-normal`}>/</span>
+            <span className={isRu ? "opacity-40" : ""}>EN</span>
+          </button>
+
+          {/* CTA */}
+          <Link to="/catalog" className={`btn btn-sm hidden md:inline-flex ${onDark ? "btn-white" : "btn-primary"}`}>
+            <Car className="h-4 w-4" />
+            {t("header.catalog")}
           </Link>
 
-          {/* Mobile Menu Trigger */}
+          {/* Mobile menu */}
           <div className="md:hidden">
-            <Sheet>
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-secondary">
-                  <Menu className="h-6 w-6 text-foreground" />
-                </Button>
+                <button
+                  type="button"
+                  aria-label={t("header.menu_title")}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
+                    onDark ? "text-white hover:bg-white/10" : "text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 overflow-y-auto">
-                <SheetHeader className="p-6 border-b text-left">
-                  <SheetTitle className="flex items-center gap-2">
-                    <span className="font-bold text-xl">Меню</span>
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col py-6">
-                  {navLinks.map((link) => (
-                    <SheetClose asChild key={link.name}>
-                      <Link
-                        to={link.href}
-                        className="flex items-center gap-4 px-6 py-4 text-base font-medium hover:bg-secondary transition-colors text-foreground"
+              <SheetContent side="right" className="w-[min(92vw,400px)] border-l-0 bg-ink p-0 text-white [&>button]:hidden">
+                <div className="flex h-full flex-col">
+                  <div className="flex items-center justify-between px-6 pt-6">
+                    <div className="h-8 w-auto aspect-[96/40] brightness-0 invert">
+                      <LogoIcon className="block size-full" />
+                    </div>
+                    <SheetClose asChild>
+                      <button
+                        type="button"
+                        aria-label={t("header.close")}
+                        className="flex h-11 w-11 items-center justify-center rounded-xl text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                       >
-                        <link.icon className="w-5 h-5 text-muted-foreground" />
-                        {link.name}
-                      </Link>
+                        <X className="h-5 w-5" />
+                      </button>
                     </SheetClose>
-                  ))}
-                  
-                  {/* Contact Info Block */}
-                  <div className="px-6 mt-6 pt-6 border-t border-border flex flex-col gap-6">
-                    <div className="flex flex-col gap-4">
-                       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Контакты</h3>
-                       
-                       <div className="flex gap-3 items-start">
-                          <Phone className="w-4 h-4 text-primary mt-1" />
-                          <div className="flex flex-col gap-1 text-sm">
-                              <a href="tel:+971544050707" className="hover:text-primary transition-colors font-medium">+971 54 405 0707</a>
-                              <a href="tel:+971544050303" className="hover:text-primary transition-colors font-medium">+971 54 405 0303</a>
-                          </div>
-                       </div>
+                  </div>
+                  <SheetTitle className="sr-only">{t("header.menu_title")}</SheetTitle>
 
-                       <div className="flex gap-3 items-start">
-                          <Mail className="w-4 h-4 text-primary mt-1" />
-                          <div className="flex flex-col gap-1 text-sm">
-                              <a href="mailto:info@mashynbazar.com" className="hover:text-primary transition-colors font-medium">info@mashynbazar.com</a>
-                          </div>
-                       </div>
+                  {/* Mobile search */}
+                  <form
+                    className="px-6 pt-8"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setMenuOpen(false);
+                      submitSearch();
+                    }}
+                  >
+                    <div className="flex h-12 items-center gap-3 rounded-xl border border-white/15 bg-white/[0.06] px-4 focus-within:border-white/40">
+                      <Search className="h-4 w-4 text-white/60" />
+                      <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={t("header.search_placeholder")}
+                        aria-label={t("header.search_placeholder")}
+                        className="w-full bg-transparent text-[15px] text-white outline-none placeholder:text-white/50"
+                      />
+                    </div>
+                  </form>
 
-                       <div className="flex gap-3 items-start">
-                          <MapPin className="w-4 h-4 text-primary mt-1" />
-                          <div className="flex flex-col gap-1 text-sm">
-                              <span className="font-medium">Dubai, UAE</span>
-                              <span className="text-muted-foreground">Al Quoz Industrial Area 3</span>
-                          </div>
-                       </div>
+                  <nav className="flex flex-col px-6 pt-6" aria-label="Mobile">
+                    {NAV.map((item, i) => (
+                      <SheetClose asChild key={item.key}>
+                        <Link
+                          to={item.href}
+                          className="group/m flex items-center justify-between border-b border-white/10 py-4 font-display text-[1.6rem] font-medium tracking-[-0.02em] text-white transition-colors hover:text-white/80"
+                          style={{ transitionDelay: `${i * 30}ms` }}
+                        >
+                          <span className="flex items-center gap-4">
+                            <span className="text-xs font-sans font-semibold tabular-nums text-white/40">0{i + 1}</span>
+                            {t(item.key)}
+                          </span>
+                          <ArrowUpRight className="h-5 w-5 text-white/40 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/m:translate-x-0.5 group-hover/m:-translate-y-0.5 group-hover/m:text-white" />
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </nav>
 
-                       <div className="flex gap-3 items-start">
-                          <Clock className="w-4 h-4 text-primary mt-1" />
-                          <div className="flex flex-col gap-1 text-sm">
-                              <span className="font-medium">{t('header.working_hours')}</span>
-                              <span className="text-muted-foreground">{t('header.sunday_off')}</span>
-                          </div>
-                       </div>
+                  <div className="mt-auto flex flex-col gap-5 px-6 pb-8 pt-8">
+                    <div className="flex items-center justify-between">
+                      <SheetClose asChild>
+                        <Link to="/catalog" className="btn btn-white">
+                          <Car className="h-4 w-4" />
+                          {t("header.catalog")}
+                        </Link>
+                      </SheetClose>
+                      <button
+                        type="button"
+                        onClick={toggleLanguage}
+                        className="flex h-12 items-center gap-1.5 rounded-xl border border-white/15 px-4 text-sm font-bold"
+                      >
+                        <span className={isRu ? "" : "opacity-40"}>RU</span>
+                        <span className="font-normal text-white/40">/</span>
+                        <span className={isRu ? "opacity-40" : ""}>EN</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 text-sm text-white/70">
+                      <a href="tel:+971544050707" className="flex items-center gap-3 transition-colors hover:text-white">
+                        <Phone className="h-4 w-4 text-white/40" /> +971 54 405 0707
+                      </a>
+                      <a href="mailto:info@mashynbazar.com" className="flex items-center gap-3 transition-colors hover:text-white">
+                        <Mail className="h-4 w-4 text-white/40" /> info@mashynbazar.com
+                      </a>
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-white/40" /> Dubai, Al Quoz Industrial Area 3
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-white/40" /> {t("header.working_hours")}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -178,6 +296,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

@@ -175,7 +175,11 @@
     "search_placeholder": "Search...",
     "menu": "Home",
     "working_hours": "Mon-Sat: 9:00 - 19:00",
-    "sunday_off": "Sun: Closed"
+    "sunday_off": "Sun: Closed",
+    "menu_title": "Menu",
+    "close": "Close",
+    "language": "Language",
+    "skip_to_content": "Skip to content"
   },
   "hero": {
     "title_line1": "Find your",
@@ -183,7 +187,9 @@
     "title_line3": "car.",
     "subtitle": "A wide selection of new and used premium cars with quality guarantee and transparent history.",
     "catalog_button": "View Catalog",
-    "contact_button": "Contact Us"
+    "contact_button": "Contact Us",
+    "eyebrow": "Cars from the UAE · Dubai",
+    "scroll": "Scroll"
   },
   "car_card": {
     "power": "Power",

@@ -1,88 +1,124 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useTranslation } from "react-i18next";
-// import HeroPattern from "./HeroPattern";
-import imgLuxuryCar from "../assets/004828c83645d790d50bcdaba3753610b0e1f7e5.png";
+import { ArrowRight, MapPin } from "lucide-react";
+import { EASE, SplitWords } from "./motion/Reveal";
 
 export default function Hero() {
   const { t } = useTranslation();
+  const reduced = useReducedMotion();
+  const ref = useRef<HTMLElement>(null);
+
+  // Parallax: the video drifts slower than the page and fades as you scroll.
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const videoY = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "18%"]);
+  const contentY = useTransform(scrollYProgress, [0, 1], ["0%", reduced ? "0%" : "30%"]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
   return (
-    <section className="relative w-full h-[100dvh] min-h-[600px] max-h-[900px] overflow-hidden bg-background">
-      {/* Background Video */}
-      <div className="absolute inset-0 w-full h-full">
-        <motion.video 
-          src="/herovid1.mp4" 
+    <section
+      ref={ref}
+      className="relative isolate w-full min-h-[100svh] overflow-hidden bg-ink text-white grain"
+      aria-label={t("hero.title_line1")}
+    >
+      {/* Background video */}
+      <motion.div className="absolute inset-0 -z-10 will-change-transform" style={{ y: videoY }}>
+        <motion.video
+          src="/herovid1.mp4"
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+          preload="auto"
+          className="h-[118%] w-full object-cover"
+          initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.08 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.6, ease: EASE }}
         />
-        {/* Gradient Overlay - Darker at bottom/left for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent md:bg-gradient-to-r md:from-black/60 md:via-transparent md:to-transparent" />
-        
-        {/* Interactive Pattern Overlay - Temporarily hidden as requested */}
-        {/* <HeroPattern /> */}
-      </div>
+        {/* Readability overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/35 to-ink/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/20 to-transparent" />
+      </motion.div>
 
-      {/* Content Container */}
-      <div className="absolute bottom-0 left-0 w-full h-full flex flex-col justify-end pb-[10%] md:justify-center md:pb-0 px-4 md:px-16 lg:px-24">
-        <div className="max-w-4xl w-full flex flex-col gap-6 md:gap-10">
-          {/* Heading */}
-          <motion.h1 
-            className="flex flex-col font-light text-white text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[1.1] tracking-tight"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: {
-                opacity: 1,
-                y: 0,
-                transition: { duration: 0.4, ease: "easeOut", staggerChildren: 0.1, delayChildren: 0.2 }
-              }
-            }}
+      {/* Content */}
+      <motion.div
+        className="container-x relative flex min-h-[100svh] flex-col justify-end pb-[calc(env(safe-area-inset-bottom)+4.5rem)] pt-32 md:pb-24"
+        style={{ y: contentY, opacity: contentOpacity }}
+      >
+        <div className="flex max-w-5xl flex-col gap-7 md:gap-9">
+          <motion.span
+            className="eyebrow eyebrow--light"
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: EASE, delay: 0.25 }}
           >
-            <motion.span variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>{t('hero.title_line1')}</motion.span>
-            <motion.span variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>{t('hero.title_line2')}</motion.span>
-            <motion.span variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="font-normal text-white">{t('hero.title_line3')}</motion.span>
-          </motion.h1>
+            {t("hero.eyebrow")}
+          </motion.span>
 
-          {/* Subheading */}
-          <motion.div 
-            className="text-base sm:text-lg md:text-xl text-gray-200 font-light leading-relaxed max-w-2xl"
-            initial={{ opacity: 0, y: 10 }}
+          <h1 className="display-xl text-white">
+            <span className="block">
+              <SplitWords text={t("hero.title_line1")} delay={0.35} />
+            </span>
+            <span className="block">
+              <SplitWords text={t("hero.title_line2")} delay={0.55} />
+            </span>
+            <span className="block text-white/55">
+              <SplitWords text={t("hero.title_line3")} delay={0.75} />
+            </span>
+          </h1>
+
+          <motion.p
+            className="max-w-xl text-base leading-relaxed text-white/75 md:text-lg"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.9, ease: EASE, delay: 1.0 }}
           >
-            <p>{t('hero.subtitle')}</p>
-          </motion.div>
+            {t("hero.subtitle")}
+          </motion.p>
 
-          {/* Buttons */}
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto mt-2"
-            initial={{ opacity: 0, y: 10 }}
+          <motion.div
+            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.9, ease: EASE, delay: 1.15 }}
           >
-            <Link 
-              to="/catalog"
-              className="bg-white text-black px-6 py-4 md:py-5 rounded-xl text-base font-medium hover:bg-neutral-100 active:scale-[0.98] transition-all text-center inline-block"
-            >
-              {t('hero.catalog_button')}
+            <Link to="/catalog" className="btn btn-lg btn-white">
+              {t("hero.catalog_button")}
+              <ArrowRight className="btn-icon h-4 w-4" />
             </Link>
-            <Link 
-              to="/#contacts"
-              className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-6 py-4 md:py-5 rounded-xl text-base font-medium hover:bg-white/20 active:scale-[0.98] transition-all text-center inline-block"
-            >
-              {t('hero.contact_button')}
+            <Link to="/#contacts" className="btn btn-lg btn-glass">
+              {t("hero.contact_button")}
             </Link>
           </motion.div>
         </div>
-      </div>
+
+        {/* Bottom row: location + scroll cue */}
+        <motion.div
+          className="mt-14 hidden items-end justify-between gap-6 border-t border-white/12 pt-6 text-[13px] text-white/60 md:flex"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.5 }}
+        >
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-brand" />
+            <span>Dubai, UAE · Al Quoz Industrial Area 3</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <span>{t("header.working_hours")}</span>
+            <a href="#youtube" className="group/cue flex items-center gap-3" aria-label={t("hero.scroll")}>
+              <span className="uppercase tracking-[0.18em] text-[11px] font-semibold">{t("hero.scroll")}</span>
+              <span className="relative block h-10 w-px overflow-hidden bg-white/20">
+                <motion.span
+                  className="absolute inset-x-0 top-0 h-1/2 bg-white"
+                  animate={reduced ? undefined : { y: ["-100%", "200%"] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </span>
+            </a>
+          </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
