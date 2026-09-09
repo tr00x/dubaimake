@@ -1,8 +1,10 @@
 import CatalogSection from "../components/CatalogSection";
+import Showroom from "../components/Showroom";
 
 export default function CatalogPage() {
   return (
-    <div className="pt-24 md:pt-28 min-h-[70vh]">
+    <div className="min-h-[70vh]">
+      <Showroom />
       <CatalogSection mode="full" />
     </div>
   );

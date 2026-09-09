@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Phone, Mail } from "lucide-react";
 import { LogoIcon } from "./ui/Icons";
 import Wordmark from "./Wordmark";
+import Globe from "./Globe";
 
 const NAV_LINKS = [
   { key: "header.youtube", href: "/#youtube" },
@@ -19,7 +20,7 @@ export default function Footer() {
       <div className="container-x pt-16 pb-8 md:pt-20">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           {/* Brand */}
-          <div className="flex flex-col gap-6 lg:col-span-5">
+          <div className="flex flex-col gap-6 lg:col-span-4">
             <Link to="/" className="inline-block w-28">
               <LogoIcon className="block h-auto w-full brightness-0 invert" />
             </Link>
@@ -30,7 +31,16 @@ export default function Footer() {
           </div>
 
           {/* Nav */}
-          <div className="flex flex-col gap-5 lg:col-span-3 lg:col-start-7">
+          {/* Living globe: Dubai and the delivery destinations */}
+          <div className="flex flex-col items-center gap-3 lg:col-span-3">
+            <Globe className="max-w-[260px]" />
+            <div className="text-center">
+              <p className="text-sm font-semibold text-white">{t("footer.globe_caption")}</p>
+              <p className="text-xs text-white/50">{t("footer.globe_sub")}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-5 lg:col-span-2">
             <span className="text-xs font-bold uppercase tracking-widest text-white/40">{t("footer.company")}</span>
             <nav className="flex flex-col gap-3" aria-label={t("footer.company")}>
               {NAV_LINKS.map((link) => (

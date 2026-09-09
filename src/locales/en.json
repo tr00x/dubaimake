@@ -379,7 +379,9 @@
     "catalog_link": "Car Catalog",
     "logistics": "Logistics",
     "customs": "Customs",
-    "copyright": "© {{year}} Mashyn Bazar. All rights reserved."
+    "copyright": "© {{year}} Mashyn Bazar. All rights reserved.",
+    "globe_caption": "From Dubai to your city",
+    "globe_sub": "Delivery across the CIS, the Caucasus and the Gulf"
   },
   "contact": {
     "title": "Our Contacts",
@@ -513,5 +515,11 @@
   "pwa": {
     "update_available": "A new version of the site is available.",
     "update_action": "Refresh"
+  },
+  "showroom": {
+    "title": "3D showroom",
+    "drag_hint": "Drag to rotate",
+    "swipe_hint": "Swipe to rotate · tap a car to open it",
+    "open": "Open"
   }
 }

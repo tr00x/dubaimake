@@ -12,9 +12,6 @@ import {
   X,
   Filter,
   SlidersHorizontal,
-  CarFront,
-  Gauge,
-  Paintbrush,
   Search,
   ArrowRight,
 } from "lucide-react";
@@ -37,15 +34,6 @@ import {
   SheetClose,
 } from "./ui/sheet";
 import { Slider } from "./ui/slider";
-import { Checkbox } from "./ui/checkbox";
-import { Label } from "./ui/label";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./ui/accordion";
-import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 type CatalogSectionProps = {
   mode?: 'preview' | 'full';
@@ -304,18 +292,19 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
           </Reveal>
         </div>
 
-        {/* Filters Bar - Only in Full Mode */}
+        {/* Filters - Only in Full Mode */}
         {mode === 'full' && (
-          <Reveal delay={0.05} className="flex flex-col gap-3 rounded-2xl bg-surface p-3 md:flex-row md:items-center md:p-4">
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+          <Reveal delay={0.05} className="flex flex-col gap-3">
+            {/* Bar */}
+            <div className="flex flex-col gap-2.5 rounded-[1.25rem] bg-surface p-2.5 md:flex-row md:items-center md:p-3">
               <div className="relative min-w-[200px] flex-1">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder={t('catalog.search_placeholder') || undefined}
                   value={searchQuery}
                   onChange={(e) => updateSearch(e.target.value)}
-                  className="field h-11 pl-10"
+                  className="field h-12 rounded-2xl pl-11 pr-10"
                   aria-label={t('catalog.search_placeholder')}
                 />
                 {searchQuery && (
@@ -331,7 +320,7 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
               </div>
 
               <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                <SelectTrigger className="!h-11 w-full rounded-xl border-none bg-input-background px-4 text-sm sm:w-[180px]">
+                <SelectTrigger className="!h-12 w-full rounded-2xl border-none bg-input-background px-4 text-sm font-medium sm:w-[190px]">
                   <SelectValue placeholder={t('catalog.brand')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -341,275 +330,148 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
                   ))}
                 </SelectContent>
               </Select>
+
+              <div className="flex gap-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button type="button" className="btn btn-primary flex-1 md:flex-none">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      {t('catalog.filters')}
+                      {activeFilterCount > 0 && (
+                        <span className="nums flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-white/20 px-1.5 text-[11px] font-bold">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-[540px]">
+                    <SheetHeader className="border-b border-border px-6 py-5 text-left">
+                      <SheetTitle className="display-md">{t('catalog.all_filters')}</SheetTitle>
+                      <SheetDescription>{t('catalog.filters_desc')}</SheetDescription>
+                    </SheetHeader>
+
+                    <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
+                      {uniqueConditions.length > 0 && (
+                        <FilterGroup label={t('catalog.condition_all')}>
+                          <div className="flex flex-wrap gap-2">
+                            <ToggleChip active={selectedCondition.length === 0} onClick={() => setSelectedCondition([])}>{t('catalog.condition_all')}</ToggleChip>
+                            {uniqueConditions.map(c => (
+                              <ToggleChip key={c} active={selectedCondition.includes(c)} onClick={() => setSelectedCondition(selectedCondition.includes(c) ? [] : [c])}>
+                                {getLocalizedValue(t, i18n.language, undefined, undefined, c, 'filter_')}
+                              </ToggleChip>
+                            ))}
+                          </div>
+                        </FilterGroup>
+                      )}
+
+                      {limits.maxPrice > limits.minPrice && (
+                        <FilterGroup label={t('catalog.price')} value={`$${priceRange[0].toLocaleString()} – $${priceRange[1].toLocaleString()}`}>
+                          <Slider value={priceRange} min={limits.minPrice} max={limits.maxPrice} step={1000} onValueChange={(val: any) => setPriceRange(val)} />
+                        </FilterGroup>
+                      )}
+                      {limits.maxYear > limits.minYear && (
+                        <FilterGroup label={t('catalog.year')} value={`${yearRange[0]} – ${yearRange[1]}`}>
+                          <Slider value={yearRange} min={limits.minYear} max={limits.maxYear} step={1} onValueChange={(val: any) => setYearRange(val)} />
+                        </FilterGroup>
+                      )}
+                      {limits.maxMileage > limits.minMileage && (
+                        <FilterGroup label={t('catalog.mileage')} value={`${mileageRange[0].toLocaleString()} – ${mileageRange[1].toLocaleString()} km`}>
+                          <Slider value={mileageRange} min={limits.minMileage} max={limits.maxMileage} step={1000} onValueChange={(val: any) => setMileageRange(val)} />
+                        </FilterGroup>
+                      )}
+                      {limits.maxHorsepower > limits.minHorsepower && (
+                        <FilterGroup label={t('catalog.horsepower')} value={`${horsepowerRange[0]} – ${horsepowerRange[1]} ${t('catalog.hp')}`}>
+                          <Slider value={horsepowerRange} min={limits.minHorsepower} max={limits.maxHorsepower} step={10} onValueChange={(val: any) => setHorsepowerRange(val)} />
+                        </FilterGroup>
+                      )}
+
+                      {uniqueBodyTypes.length > 0 && (
+                        <FilterGroup label={t('catalog.body_type')}>
+                          <ChipGroup items={uniqueBodyTypes} selected={selectedBody} onChange={setSelectedBody} render={(v) => getLocalizedValue(t, i18n.language, undefined, undefined, v)} />
+                        </FilterGroup>
+                      )}
+                      {uniqueTransmissions.length > 0 && (
+                        <FilterGroup label={t('catalog.transmission')}>
+                          <ChipGroup items={uniqueTransmissions} selected={selectedTrans} onChange={setSelectedTrans} render={(v) => getLocalizedValue(t, i18n.language, undefined, undefined, v, 'filter_')} />
+                        </FilterGroup>
+                      )}
+                      {uniqueDriveTypes.length > 0 && (
+                        <FilterGroup label={t('catalog.drive_type')}>
+                          <ChipGroup items={uniqueDriveTypes} selected={selectedDrive} onChange={setSelectedDrive} render={(v) => getLocalizedValue(t, i18n.language, undefined, undefined, v)} />
+                        </FilterGroup>
+                      )}
+                      {uniqueFuelTypes.length > 0 && (
+                        <FilterGroup label={t('catalog.fuel_type')}>
+                          <ChipGroup items={uniqueFuelTypes} selected={selectedFuel} onChange={setSelectedFuel} render={(v) => getLocalizedValue(t, i18n.language, undefined, undefined, v, 'filter_')} />
+                        </FilterGroup>
+                      )}
+                      {uniqueColors.length > 0 && (
+                        <FilterGroup label={t('catalog.color')}>
+                          <ChipGroup items={uniqueColors} selected={selectedColor} onChange={setSelectedColor} render={(v) => getLocalizedValue(t, i18n.language, undefined, undefined, v, 'color_')} />
+                        </FilterGroup>
+                      )}
+                    </div>
+
+                    <SheetFooter className="flex-row items-center gap-3 border-t border-border px-6 py-4 sm:justify-between">
+                      <span className="nums text-sm text-muted-foreground">{t('catalog.found_cars', { count: filteredCars.length })}</span>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={clearAllFilters} className="btn btn-outline btn-sm">
+                          {t('catalog.clear_filters')}
+                        </button>
+                        <SheetClose asChild>
+                          <button type="button" className="btn btn-primary btn-sm">{t('catalog.apply')}</button>
+                        </SheetClose>
+                      </div>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
+
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="icon-btn h-12 w-12 shrink-0 rounded-2xl"
+                    aria-label={t('catalog.clear_filters')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-2">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <button type="button" className="btn btn-outline btn-sm flex-1 md:flex-none">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    {t('catalog.filters')}
-                    {activeFilterCount > 0 && (
-                      <span className="chip chip--brand nums h-5 min-w-[1.25rem] px-1.5 text-[11px]">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </SheetTrigger>
-                <SheetContent className="w-full overflow-y-auto sm:w-[500px]">
-                  <SheetHeader className="px-6">
-                    <SheetTitle>{t('catalog.all_filters')}</SheetTitle>
-                    <SheetDescription>
-                      {t('catalog.filters_desc')}
-                    </SheetDescription>
-                  </SheetHeader>
-
-                  <div className="py-6 px-6 space-y-6">
-                    {/* Condition Tabs */}
-                    <Tabs
-                      defaultValue="all"
-                      value={selectedCondition.length === 0 ? "all" : selectedCondition[0]}
-                      onValueChange={(val) => {
-                        if (val === "all") setSelectedCondition([]);
-                        else setSelectedCondition([val]);
-                      }}
-                      className="w-full"
-                    >
-                      <TabsList className="w-full grid grid-cols-3">
-                        <TabsTrigger value="all">{t('catalog.condition_all')}</TabsTrigger>
-                        <TabsTrigger value="New">{t('filter_new')}</TabsTrigger>
-                        <TabsTrigger value="Used">{t('filter_used')}</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-
-                    <Accordion type="multiple" defaultValue={["price", "specs"]} className="w-full">
-
-                      {/* Main Specs */}
-                      <AccordionItem value="price">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <CarFront className="w-4 h-4 text-primary" />
-                            <span>{t('catalog.main_info')}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4 px-1">
-                          {/* Price */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label>{t('catalog.price')}</Label>
-                              <span className="nums text-sm text-muted-foreground">${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}</span>
-                            </div>
-                            <Slider
-                              value={priceRange}
-                              min={limits.minPrice}
-                              max={limits.maxPrice}
-                              step={1000}
-                              onValueChange={(val: any) => setPriceRange(val)}
-                            />
-                          </div>
-
-                          {/* Year */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label>{t('catalog.year')}</Label>
-                              <span className="nums text-sm text-muted-foreground">{yearRange[0]} - {yearRange[1]}</span>
-                            </div>
-                            <Slider
-                              value={yearRange}
-                              min={limits.minYear}
-                              max={limits.maxYear}
-                              step={1}
-                              onValueChange={(val: any) => setYearRange(val)}
-                            />
-                          </div>
-
-                          {/* Mileage */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label>{t('catalog.mileage')}</Label>
-                              <span className="nums text-sm text-muted-foreground">{mileageRange[0].toLocaleString()} - {mileageRange[1].toLocaleString()} km</span>
-                            </div>
-                            <Slider
-                              value={mileageRange}
-                              min={limits.minMileage}
-                              max={limits.maxMileage}
-                              step={1000}
-                              onValueChange={(val: any) => setMileageRange(val)}
-                            />
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      {/* Technical Specs */}
-                      <AccordionItem value="specs">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <Gauge className="w-4 h-4 text-primary" />
-                            <span>{t('catalog.tech_specs')}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4 px-1">
-                          {/* Horsepower */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label>{t('catalog.horsepower')}</Label>
-                              <span className="nums text-sm text-muted-foreground">{horsepowerRange[0]} - {horsepowerRange[1]} hp</span>
-                            </div>
-                            <Slider
-                              value={horsepowerRange}
-                              min={limits.minHorsepower}
-                              max={limits.maxHorsepower}
-                              step={10}
-                              onValueChange={(val: any) => setHorsepowerRange(val)}
-                            />
-                          </div>
-
-                          {/* Body Type */}
-                          <div className="space-y-3">
-                            <Label>{t('catalog.body_type')}</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {uniqueBodyTypes.map(type => (
-                                <div key={type} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`body-${type}`}
-                                    checked={selectedBody.includes(type)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) setSelectedBody([...selectedBody, type]);
-                                      else setSelectedBody(selectedBody.filter(t => t !== type));
-                                    }}
-                                  />
-                                  <Label htmlFor={`body-${type}`} className="text-sm font-normal cursor-pointer">
-                                    {getLocalizedValue(t, i18n.language, undefined, undefined, type)}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Transmission */}
-                          <div className="space-y-3">
-                            <Label>{t('catalog.transmission')}</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {uniqueTransmissions.map(type => (
-                                <div key={type} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`trans-${type}`}
-                                    checked={selectedTrans.includes(type)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) setSelectedTrans([...selectedTrans, type]);
-                                      else setSelectedTrans(selectedTrans.filter(t => t !== type));
-                                    }}
-                                  />
-                                  <Label htmlFor={`trans-${type}`} className="text-sm font-normal cursor-pointer">
-                                    {getLocalizedValue(t, i18n.language, undefined, undefined, type, 'filter_')}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Drive Type */}
-                          <div className="space-y-3">
-                            <Label>{t('catalog.drive_type')}</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {uniqueDriveTypes.map(type => (
-                                <div key={type} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`drive-${type}`}
-                                    checked={selectedDrive.includes(type)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) setSelectedDrive([...selectedDrive, type]);
-                                      else setSelectedDrive(selectedDrive.filter(t => t !== type));
-                                    }}
-                                  />
-                                  <Label htmlFor={`drive-${type}`} className="text-sm font-normal cursor-pointer">
-                                    {getLocalizedValue(t, i18n.language, undefined, undefined, type)}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Fuel */}
-                          <div className="space-y-3">
-                            <Label>{t('catalog.fuel_type')}</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {uniqueFuelTypes.map(type => (
-                                <div key={type} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`fuel-${type}`}
-                                    checked={selectedFuel.includes(type)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) setSelectedFuel([...selectedFuel, type]);
-                                      else setSelectedFuel(selectedFuel.filter(t => t !== type));
-                                    }}
-                                  />
-                                  <Label htmlFor={`fuel-${type}`} className="text-sm font-normal cursor-pointer">
-                                    {getLocalizedValue(t, i18n.language, undefined, undefined, type, 'filter_')}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      {/* Appearance & Condition */}
-                      <AccordionItem value="appearance">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <Paintbrush className="w-4 h-4 text-primary" />
-                            <span>{t('catalog.appearance')}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4 px-1">
-                          {/* Color */}
-                          <div className="space-y-3">
-                            <Label>{t('catalog.color')}</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {uniqueColors.map(type => (
-                                <div key={type} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`color-${type}`}
-                                    checked={selectedColor.includes(type)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) setSelectedColor([...selectedColor, type]);
-                                      else setSelectedColor(selectedColor.filter(t => t !== type));
-                                    }}
-                                  />
-                                  <Label htmlFor={`color-${type}`} className="text-sm font-normal cursor-pointer">
-                                    {getLocalizedValue(t, i18n.language, undefined, undefined, type, 'color_')}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </div>
-
-                  <SheetFooter className="pt-4 border-t">
-                    <div className="flex w-full gap-2">
-                      <button type="button" onClick={clearAllFilters} className="btn btn-outline flex-1">
-                        {t('catalog.clear_filters')}
-                      </button>
-                      <SheetClose asChild>
-                        <button type="button" className="btn btn-primary flex-1">{t('catalog.apply')}</button>
-                      </SheetClose>
-                    </div>
-                  </SheetFooter>
-                </SheetContent>
-              </Sheet>
-
+            {/* Quick filters + active ranges */}
+            <div className="flex flex-wrap items-center gap-2 px-1">
+              {uniqueConditions.length > 0 && (
+                <>
+                  <ToggleChip active={selectedCondition.length === 0} onClick={() => setSelectedCondition([])}>{t('catalog.condition_all')}</ToggleChip>
+                  {uniqueConditions.map(c => (
+                    <ToggleChip key={c} active={selectedCondition.includes(c)} onClick={() => setSelectedCondition(selectedCondition.includes(c) ? [] : [c])}>
+                      {getLocalizedValue(t, i18n.language, undefined, undefined, c, 'filter_')}
+                    </ToggleChip>
+                  ))}
+                  {uniqueBodyTypes.length > 0 && <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />}
+                </>
+              )}
+              {uniqueBodyTypes.map(type => (
+                <ToggleChip key={type} active={selectedBody.includes(type)} onClick={() => setSelectedBody(selectedBody.includes(type) ? selectedBody.filter(b => b !== type) : [...selectedBody, type])}>
+                  {getLocalizedValue(t, i18n.language, undefined, undefined, type)}
+                </ToggleChip>
+              ))}
+              {(priceRange[0] > limits.minPrice || priceRange[1] < limits.maxPrice) && (
+                <RemovableChip onRemove={() => setPriceRange([limits.minPrice, limits.maxPrice])}>{`$${priceRange[0].toLocaleString()} – $${priceRange[1].toLocaleString()}`}</RemovableChip>
+              )}
+              {(yearRange[0] > limits.minYear || yearRange[1] < limits.maxYear) && (
+                <RemovableChip onRemove={() => setYearRange([limits.minYear, limits.maxYear])}>{`${yearRange[0]} – ${yearRange[1]}`}</RemovableChip>
+              )}
+              {(mileageRange[0] > limits.minMileage || mileageRange[1] < limits.maxMileage) && (
+                <RemovableChip onRemove={() => setMileageRange([limits.minMileage, limits.maxMileage])}>{`${mileageRange[0].toLocaleString()} – ${mileageRange[1].toLocaleString()} km`}</RemovableChip>
+              )}
+              {(horsepowerRange[0] > limits.minHorsepower || horsepowerRange[1] < limits.maxHorsepower) && (
+                <RemovableChip onRemove={() => setHorsepowerRange([limits.minHorsepower, limits.maxHorsepower])}>{`${horsepowerRange[0]} – ${horsepowerRange[1]} ${t('catalog.hp')}`}</RemovableChip>
+              )}
               {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearAllFilters}
-                  className="icon-btn shrink-0"
-                  aria-label={t('catalog.clear_filters')}
-                >
-                  <X className="h-4 w-4" />
+                <button type="button" onClick={clearAllFilters} className="ml-1 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">
+                  {t('catalog.clear_filters')}
                 </button>
               )}
             </div>
@@ -735,5 +597,57 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
         )}
       </div>
     </section>
+  );
+}
+
+/* ---- small filter UI pieces ---- */
+
+function FilterGroup({ label, value, children }: { label: string; value?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
+        {value && <span className="nums text-sm font-semibold text-foreground">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ToggleChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`chip h-9 cursor-pointer select-none px-3.5 text-[13px] transition-[background-color,color,border-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] ${
+        active ? "bg-ink text-white" : "chip--outline bg-background text-foreground hover:border-ink/40"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RemovableChip({ onRemove, children }: { onRemove: () => void; children: React.ReactNode }) {
+  return (
+    <span className="chip nums h-9 gap-2 bg-ink pl-3.5 pr-2 text-[13px] text-white">
+      {children}
+      <button type="button" onClick={onRemove} className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/30" aria-label="×">
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
+function ChipGroup({ items, selected, onChange, render }: { items: string[]; selected: string[]; onChange: (next: string[]) => void; render: (v: string) => string }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((v) => (
+        <ToggleChip key={v} active={selected.includes(v)} onClick={() => onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v])}>
+          {render(v)}
+        </ToggleChip>
+      ))}
+    </div>
   );
 }
