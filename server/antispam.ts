@@ -257,12 +257,13 @@ export const contactLimiter = rateLimit({
     },
 });
 
-/** Global safety valve: 80 submissions / hour across all IPs. */
+/** Global safety valve: 80 accepted submissions / hour across all IPs (rejected requests do not count). */
 export const contactGlobalLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     limit: 80,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
+    skipFailedRequests: true,
     keyGenerator: () => 'global',
     handler: limiterHandler,
     validate: { keyGeneratorIpFallback: false },

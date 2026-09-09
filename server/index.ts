@@ -690,8 +690,10 @@ app.post('/api/translations/:lang', requireAuth, (req, res) => {
 });
 
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+// Bind to loopback only: nginx is the sole client, and this keeps X-Forwarded-For trustworthy.
+const HOST = process.env.HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}`);
     console.log(`[antispam] captcha mode: ${resolveCaptchaMode()}`);
     if (!process.env.JWT_SECRET) {
         console.warn('[antispam] JWT_SECRET is not set — using an insecure default. Add JWT_SECRET to .env');
