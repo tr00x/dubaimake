@@ -11,16 +11,21 @@ BACKUP_DIR=/root/backups
 
 cd "$APP_DIR"
 
-echo "==> Backup .env and DB"
-mkdir -p "$BACKUP_DIR"
-cp .env "$BACKUP_DIR/masynbazar-$TS.env"
-cp prisma/dev.db "$BACKUP_DIR/masynbazar-$TS.db" 2>/dev/null || true
+if [ "${1:-}" != "--continue" ]; then
+  echo "==> Backup .env and DB"
+  mkdir -p "$BACKUP_DIR"
+  cp .env "$BACKUP_DIR/masynbazar-$TS.env"
+  cp prisma/dev.db "$BACKUP_DIR/masynbazar-$TS.db" 2>/dev/null || true
 
-echo "==> Fetch and reset to origin/main"
-git fetch origin
-git reset --hard origin/main
-# .env is untracked since 2026-09-09; a reset from the old tracked state deletes it — restore.
-if [ ! -f .env ]; then cp "$BACKUP_DIR/masynbazar-$TS.env" .env; echo "restored .env"; fi
+  echo "==> Fetch and reset to origin/main"
+  git fetch origin
+  git reset --hard origin/main
+  # .env is untracked since 2026-09-09; a reset from the old tracked state deletes it — restore.
+  if [ ! -f .env ]; then cp "$BACKUP_DIR/masynbazar-$TS.env" .env; echo "restored .env"; fi
+
+  # The reset just replaced this very script: continue with the freshly checked-out version.
+  exec bash "$APP_DIR/deploy/deploy.sh" --continue
+fi
 
 echo "==> Install dependencies"
 npm ci --no-audit --no-fund
