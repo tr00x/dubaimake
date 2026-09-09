@@ -1,66 +1,32 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "./ui/button";
-import { 
-  SalesIcon, 
-  SearchIcon, 
-  PartsIcon, 
-  AccIcon, 
-  RepairIcon, 
-  TuningIcon, 
-  RegIcon, 
-  TransportIcon, 
-  ContainerIcon 
+import { ChevronDown } from "lucide-react";
+import { Reveal, Stagger, Item, EASE } from "./motion/Reveal";
+import {
+  SalesIcon,
+  SearchIcon,
+  PartsIcon,
+  AccIcon,
+  RepairIcon,
+  TuningIcon,
+  RegIcon,
+  TransportIcon,
+  ContainerIcon
 } from "./ui/Icons";
 
-interface ServiceCardProps {
+interface ServiceItem {
   icon: React.ReactNode;
   title: string;
   description: string;
   features: string[];
-  className?: string;
 }
-
-const ServiceCard = React.forwardRef<HTMLDivElement, ServiceCardProps>(({ icon, title, description, features, className = "" }, ref) => {
-  const dark = className?.includes("text-white") || className?.includes("!text-white");
-  return (
-    <motion.div 
-      ref={ref}
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-      className={`flex flex-col bg-card rounded-2xl border border-border hover:border-ring/50 transition-colors group h-full ${className}`}
-    >
-      <div className="p-6 md:p-8 flex flex-col gap-4">
-        <div className={`w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300 ${dark ? "border border-white/20 bg-white/10 text-white" : "border border-border bg-background text-foreground"}`}>
-          {icon}
-        </div>
-        <h3 className={`text-xl md:text-2xl font-medium leading-tight ${dark ? "text-white" : "text-card-foreground"}`}>{title}</h3>
-        <div className={`text-sm md:text-base leading-relaxed ${dark ? "text-white/80" : "text-muted-foreground"}`}>
-          {description}
-        </div>
-        <div className="flex flex-col gap-2.5 mt-2">
-          {features.map((feature, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${dark ? "bg-white" : "bg-primary"}`} />
-              <span className={`text-sm md:text-[15px] leading-snug ${dark ? "text-white/80" : "text-muted-foreground"}`}>{feature}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-});
-ServiceCard.displayName = "ServiceCard";
 
 export default function ServicesSection() {
   const { t } = useTranslation();
+  const reduced = useReducedMotion();
 
-  const servicesData = [
+  const servicesData: ServiceItem[] = [
     {
       icon: <SalesIcon/>,
       title: t('services.items.sales.title'),
@@ -133,57 +99,73 @@ export default function ServicesSection() {
     }
   };
 
+  const exitVariant = reduced
+    ? { opacity: 0, transition: { duration: 0.2 } }
+    : { opacity: 0, y: -16, filter: "blur(6px)", transition: { duration: 0.35, ease: EASE } };
+
   return (
-    <section id="services" className="container mx-auto px-4 md:px-10 py-16 md:py-24 flex flex-col gap-10 md:gap-16">
+    <section id="services" className="section container-x scroll-mt-24">
       {/* Header */}
-      <motion.div 
-        className="flex flex-col gap-4 items-center text-center max-w-xl mx-auto"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-         <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">{t('services.directions')}</span>
-         <h2 className="text-3xl md:text-4xl font-medium text-foreground leading-[1.1]">{t('services.section_title')}</h2>
-         <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            {t('services.section_subtitle')}
-         </p>
-      </motion.div>
+      <Reveal className="grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-6">
+        <div className="lg:col-span-5">
+          <span className="eyebrow">{t('services.directions')}</span>
+          <h2 className="display-lg mt-4">{t('services.section_title')}</h2>
+        </div>
+        <div className="lg:col-span-6 lg:col-start-7">
+          <p className="lead">{t('services.section_subtitle')}</p>
+        </div>
+      </Reveal>
 
-      <div className="flex flex-col gap-8 items-center">
-        <motion.div 
-          layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 w-full"
-        >
-          <AnimatePresence mode="popLayout">
-            {visibleServices.map((service, index) => (
-               <ServiceCard 
-                 key={service.title}
-                 {...service}
-                 className={isExpanded && index === servicesData.length - 1 ? "xl:col-span-4 lg:col-span-3 sm:col-span-2" : ""}
-               />
-            ))}
-          </AnimatePresence>
-        </motion.div>
-
-        <motion.div layout>
-            <Button
-                variant="outline"
-                size="lg"
-                onClick={handleToggle}
-                className="gap-2 rounded-full px-8 h-12 text-base font-medium hover:bg-primary hover:text-primary-foreground transition-all duration-300 flex items-center justify-center"
+      {/* Numbered service list */}
+      <Stagger layout className="mt-14 grid grid-cols-1 gap-x-16 md:mt-16 lg:grid-cols-2">
+        <AnimatePresence mode="popLayout" initial={false}>
+          {visibleServices.map((service, index) => (
+            <Item
+              key={service.title}
+              layout
+              exit={exitVariant}
+              className="group grid grid-cols-[auto_1fr] gap-5 border-b border-border py-7 md:gap-7 md:py-8"
             >
-                <span className="relative flex items-center gap-2">
-                    {isExpanded ? t('services.collapse') : t('services.show_all')}
-                    <motion.div
-                        animate={{ rotate: isExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                    >
-                        <ChevronDown className="w-4 h-4" />
-                    </motion.div>
+              <div className="flex flex-col items-center gap-3 pt-1">
+                <span className="nums font-display text-sm text-brand" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
                 </span>
-            </Button>
-        </motion.div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2 text-foreground transition-colors duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:bg-ink group-hover:text-white">
+                  {service.icon}
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <h3 className="font-sans text-xl font-bold tracking-[-0.01em] text-foreground transition-transform duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-1 md:text-[1.35rem]">
+                  {service.title}
+                </h3>
+                <p className="leading-relaxed text-muted-foreground">{service.description}</p>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {service.features.map((feature, i) => (
+                    <span key={i} className="chip chip--outline">{feature}</span>
+                  ))}
+                </div>
+              </div>
+            </Item>
+          ))}
+        </AnimatePresence>
+      </Stagger>
+
+      <div className="mt-10 flex justify-center md:mt-12">
+        <button
+          type="button"
+          onClick={handleToggle}
+          aria-expanded={isExpanded}
+          className="btn btn-outline"
+        >
+          {isExpanded ? t('services.collapse') : t('services.show_all')}
+          <motion.span
+            className="inline-flex"
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: reduced ? 0 : 0.4, ease: EASE }}
+          >
+            <ChevronDown className="h-4 w-4" aria-hidden="true" />
+          </motion.span>
+        </button>
       </div>
     </section>
   );

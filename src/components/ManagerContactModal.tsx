@@ -144,9 +144,9 @@ export default function ManagerContactModal({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px] p-5 gap-0 overflow-hidden">
-        <DialogHeader className="text-center space-y-1 pb-4">
-          <DialogTitle className="text-xl font-bold">{t('contact.modal.title')}</DialogTitle>
+      <DialogContent className="sm:max-w-[420px] p-6 gap-0 rounded-3xl overflow-hidden">
+        <DialogHeader className="text-center space-y-1.5 pb-5">
+          <DialogTitle className="display-md">{t('contact.modal.title')}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {t('contact.modal.subtitle')}
           </DialogDescription>
@@ -154,33 +154,33 @@ export default function ManagerContactModal({
 
         <div className="grid gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <button 
+            <button
               type="button"
-              className="group flex w-full items-center justify-center gap-2 h-12 bg-muted/50 hover:bg-[#25D366] rounded-xl transition-all duration-300 border border-transparent hover:border-[#25D366] outline-none"
+              className="btn group bg-surface-2 hover:bg-[#25D366] border border-transparent hover:border-[#25D366]"
               onClick={handleWhatsAppClick}
             >
               <WhatsAppIcon className="w-5 h-5 transition-colors duration-300 fill-[#25D366] group-hover:fill-white" />
-              <span 
-                className="font-bold text-sm transition-colors duration-300 text-[#25D366] group-hover:text-white"
+              <span
+                className="transition-colors duration-300 text-[#25D366] group-hover:text-white"
               >
                 WhatsApp
               </span>
             </button>
-            <button 
+            <button
               type="button"
-              className="group flex w-full items-center justify-center gap-2 h-12 bg-muted/50 hover:bg-[#229ED9] rounded-xl transition-all duration-300 border border-transparent hover:border-[#229ED9] outline-none"
+              className="btn group bg-surface-2 hover:bg-[#229ED9] border border-transparent hover:border-[#229ED9]"
               onClick={handleTelegramClick}
             >
               <TelegramIcon className="w-5 h-5 transition-colors duration-300 fill-[#229ED9] group-hover:fill-white" />
-              <span 
-                className="font-bold text-sm transition-colors duration-300 text-[#229ED9] group-hover:text-white"
+              <span
+                className="transition-colors duration-300 text-[#229ED9] group-hover:text-white"
               >
                 Telegram
               </span>
             </button>
           </div>
-          
-          <div className="relative py-2">
+
+          <div className="relative py-1">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border" />
             </div>
@@ -192,13 +192,13 @@ export default function ManagerContactModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid gap-3 pt-2">
+        <form onSubmit={handleSubmit} className="grid gap-3 pt-3">
           {carTitle && (
-            <div className="bg-secondary/30 border border-border/50 rounded-lg p-3 flex items-center gap-4 relative overflow-hidden group">
-              <div 
+            <div className="bg-surface-2 rounded-xl p-3 flex items-center gap-4 relative overflow-hidden group">
+              <div
                 className="absolute right-0 top-0 pointer-events-none translate-x-1/3 -translate-y-1/4 w-[80px] h-[80px]"
               >
-                 <Car 
+                 <Car
                    className="w-full h-full text-foreground/5"
                  />
               </div>
@@ -211,64 +211,58 @@ export default function ManagerContactModal({
               </div>
             </div>
           )}
-          
+
           <div className="grid gap-3">
-            <div className="space-y-1">
-              <div className="bg-background rounded-lg border border-foreground/20 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground/20 transition-all flex items-center gap-3 px-3 h-10">
-                <User className="w-4 h-4 text-muted-foreground" />
-                <input
-                  id="name"
-                  placeholder={t('contact.modal.name_placeholder')}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
+            <div className="relative">
+              <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="name"
+                placeholder={t('contact.modal.name_placeholder')}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                className="field h-11 pl-10"
+              />
             </div>
 
-            <div className="space-y-1">
-              <div className="bg-background rounded-lg border border-foreground/20 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground/20 transition-all flex items-center gap-3 px-3 h-10 shadow-sm">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <input
-                  id="contact"
-                  placeholder={t('contact.modal.contact_placeholder')}
-                  value={formData.contact}
-                  onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                  required
-                  className="w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
+            <div className="relative">
+              <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="contact"
+                placeholder={t('contact.modal.contact_placeholder')}
+                value={formData.contact}
+                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                required
+                className="field h-11 pl-10"
+              />
             </div>
 
-            <div className="space-y-1">
-              <div className="bg-background rounded-lg border border-foreground/20 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground/20 transition-all flex gap-3 px-3 py-2.5 shadow-sm">
-                <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5" />
-                <textarea
-                  id="message"
-                  placeholder={t('contact.modal.message_placeholder')}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground min-h-[60px] resize-none"
-                  required
-                />
-              </div>
+            <div className="relative">
+              <MessageSquare className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
+              <textarea
+                id="message"
+                placeholder={t('contact.modal.message_placeholder')}
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                className="field min-h-[80px] pl-10 pt-3"
+                required
+              />
             </div>
           </div>
 
           <CaptchaField guard={guard} variant="modal" />
 
-          <button 
-            type="submit" 
-            disabled={loading || guard.loading} 
-            className="mt-1 w-full flex items-center justify-center gap-2 bg-foreground text-background hover:bg-foreground/90 h-10 text-sm font-semibold rounded-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          <button
+            type="submit"
+            disabled={loading || guard.loading}
+            className="btn btn-primary w-full"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
                 <span>{t('contact.modal.submit')}</span>
-                <Send className="w-3.5 h-3.5" />
+                <Send className="btn-icon w-3.5 h-3.5" />
               </>
             )}
           </button>

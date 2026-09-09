@@ -278,9 +278,7 @@ body {
     color: #111827;
 }
 
-.hidden {
-    display: none;
-}
+/* .hidden helper removed: Tailwind provides .hidden; a global unlayered copy overrode md:flex/md:block everywhere */
 
 /* Header */
 .admin-header {

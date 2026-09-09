@@ -1,53 +1,80 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Phone, Mail } from "lucide-react";
 import { LogoIcon } from "./ui/Icons";
+
+const NAV_LINKS = [
+  { key: "header.youtube", href: "/#youtube" },
+  { key: "header.catalog", href: "/#catalog" },
+  { key: "header.services", href: "/#services" },
+  { key: "header.contacts", href: "/#contacts" },
+] as const;
 
 export default function Footer() {
   const { t } = useTranslation();
   const year = new Date().getFullYear();
 
-  const navLinks = [
-    { name: t('header.youtube'), href: "/#youtube" },
-    { name: t('header.catalog'), href: "/#catalog" },
-    { name: t('header.services'), href: "/#services" },
-    { name: t('header.contacts'), href: "/#contacts" },
-  ];
-
   return (
-    <footer className="bg-primary text-primary-foreground py-16 border-t border-primary-foreground/10">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-10 flex flex-col gap-10">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-          <div className="flex flex-col gap-6 max-w-[400px]">
-             {/* Logo */}
-            <Link to="/" className="inline-block">
-                <div className="h-[56px] w-auto bg-white rounded-lg px-3 py-2 flex items-center justify-center">
-                    <LogoIcon className="h-full w-auto" />
-                </div>
+    <footer className="relative bg-ink text-white grain">
+      <div className="container-x pt-16 pb-8 md:pt-20">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+          {/* Brand */}
+          <div className="flex flex-col gap-6 lg:col-span-5">
+            <Link to="/" className="inline-block w-28">
+              <LogoIcon className="block h-auto w-full brightness-0 invert" />
             </Link>
-            
-            <p className="text-primary-foreground/70 text-sm leading-relaxed">
-              {t('footer.description')}
-            </p>
+            <p className="max-w-sm text-sm leading-relaxed text-white/60">{t("footer.description")}</p>
+            <Link to="/catalog" className="btn btn-white btn-sm w-fit">
+              {t("header.catalog")}
+            </Link>
           </div>
-          
-          {/* Optional: Header Menu Items */}
-          <nav className="flex flex-col gap-6 md:items-end">
-            {navLinks.map((link) => (
-                <Link 
-                    key={link.name}
-                    to={link.href}
-                    className="text-base font-medium text-primary-foreground/60 hover:text-white transition-colors duration-200"
+
+          {/* Nav */}
+          <div className="flex flex-col gap-5 lg:col-span-3 lg:col-start-7">
+            <span className="text-xs font-bold uppercase tracking-widest text-white/40">{t("footer.company")}</span>
+            <nav className="flex flex-col gap-3" aria-label={t("footer.company")}>
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.key}
+                  to={link.href}
+                  className="w-fit text-[15px] text-white/70 underline-offset-4 transition-colors duration-300 hover:text-white hover:underline"
                 >
-                    {link.name}
+                  {t(link.key)}
                 </Link>
-            ))}
-          </nav>
+              ))}
+              <Link
+                to="/catalog"
+                className="w-fit text-[15px] text-white/70 underline-offset-4 transition-colors duration-300 hover:text-white hover:underline"
+              >
+                {t("footer.catalog_link")}
+              </Link>
+            </nav>
+          </div>
+
+          {/* Contacts */}
+          <div className="flex flex-col gap-5 lg:col-span-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-white/40">{t("footer.contacts")}</span>
+            <div className="flex flex-col gap-3 text-[15px] text-white/70">
+              <a href="tel:+971544050707" className="flex w-fit items-center gap-2.5 transition-colors duration-300 hover:text-white">
+                <Phone className="h-4 w-4 text-white/40" />
+                +971 54 405 0707
+              </a>
+              <a href="mailto:info@mashynbazar.com" className="flex w-fit items-center gap-2.5 transition-colors duration-300 hover:text-white">
+                <Mail className="h-4 w-4 text-white/40" />
+                info@mashynbazar.com
+              </a>
+              <p className="text-white/50">Dubai, Al Quoz Industrial Area 3</p>
+              <p className="text-white/50">
+                {t("header.working_hours")} · {t("header.sunday_off")}
+              </p>
+            </div>
+          </div>
         </div>
-        
-        <div className="h-px bg-primary-foreground/10 w-full" />
-        
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-primary-foreground/50">
-          <p>{t('footer.copyright', { year })}</p>
+
+        {/* Bottom bar */}
+        <div className="mt-16 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-8 text-xs text-white/40 sm:flex-row">
+          <p>{t("footer.copyright", { year })}</p>
+          <p>Mashyn Bazar · Dubai</p>
         </div>
       </div>
     </footer>

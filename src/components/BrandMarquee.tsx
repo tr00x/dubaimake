@@ -4,6 +4,21 @@ import { Marquee } from "./motion/Marquee";
 
 const FALLBACK_BRANDS = ["Toyota", "Porsche", "Ford", "Nissan", "Ferrari", "Cadillac", "Mercedes-Benz", "Chevrolet"];
 
+/** Display-only spelling fixes for brand names typed into the catalog. */
+const BRAND_FIXES: Record<string, string> = {
+  ferarri: "Ferrari",
+  ferrari: "Ferrari",
+  porshe: "Porsche",
+  porsche: "Porsche",
+  chevroloet: "Chevrolet",
+  chevrolet: "Chevrolet",
+  mercedes: "Mercedes-Benz",
+  "mercedes-benz": "Mercedes-Benz",
+  bmw: "BMW",
+  gmc: "GMC",
+  "land": "Land Rover",
+};
+
 /**
  * Dark strip under the hero listing the brands currently in the catalog.
  * Brands are derived from the live inventory (first word of each title).
@@ -19,7 +34,9 @@ export default function BrandMarquee() {
         const set = new Set<string>();
         for (const car of res.data as { title: string }[]) {
           const brand = (car.title || "").trim().split(/\s+/)[0];
-          if (brand) set.add(brand.replace(/^\w/, (c) => c.toUpperCase()));
+          if (!brand) continue;
+          const fixed = BRAND_FIXES[brand.toLowerCase()] || brand.replace(/^\w/, (c) => c.toUpperCase());
+          set.add(fixed);
         }
         const list = Array.from(set);
         if (!cancelled && list.length >= 3) setBrands(list);

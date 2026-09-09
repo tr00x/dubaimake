@@ -243,9 +243,7 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
   const compact = variant === "modal";
   const inputId = `captcha-answer-${variant}`;
 
-  const inputClass = compact
-    ? "w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
-    : "h-12 px-4 rounded-xl bg-background border border-border focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-all w-full";
+  const inputClass = compact ? "field h-14" : "field h-[76px]";
 
   return (
     <>
@@ -285,7 +283,7 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
 
       {challenge?.captcha.type === "image" && (
         <div className="flex flex-col gap-2.5">
-          <label htmlFor={inputId} className={compact ? "text-xs font-semibold text-muted-foreground" : "text-sm font-medium text-foreground"}>
+          <label htmlFor={inputId} className={compact ? "text-xs font-semibold text-muted-foreground" : "text-sm font-semibold text-foreground"}>
             {t("contact.captcha.label")}
           </label>
           <div className={`flex flex-col gap-3 ${compact ? "" : "sm:flex-row sm:items-stretch"}`}>
@@ -304,7 +302,7 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
                 disabled={loading}
                 aria-label={t("contact.captcha.refresh")}
                 title={t("contact.captcha.refresh")}
-                className={`flex shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50 ${compact ? "h-16 w-14" : "h-[76px] w-16"}`}
+                className={`icon-btn shrink-0 rounded-xl ${compact ? "h-16 w-14" : "h-[76px] w-16"}`}
               >
                 <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
               </button>
@@ -322,7 +320,7 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
                 inputMode="text"
                 maxLength={8}
                 required
-                className={`w-full rounded-xl border border-border bg-background pl-12 pr-4 text-lg font-semibold tracking-[0.2em] text-foreground outline-none transition-all placeholder:text-base placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring ${compact ? "h-14" : "h-[76px]"}`}
+                className={`${inputClass} pl-12 text-lg font-semibold tracking-[0.2em] placeholder:text-base placeholder:font-normal placeholder:tracking-normal`}
               />
             </div>
           </div>

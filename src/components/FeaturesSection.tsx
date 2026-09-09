@@ -1,82 +1,72 @@
 import React from "react";
 import { CheckCircle2, FileText, Clock, Globe } from "lucide-react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { Reveal, Stagger, Item } from "./motion/Reveal";
 
-interface FeatureCardProps {
+interface FeatureItem {
   icon: React.ReactNode;
   title: string;
   description: string;
 }
 
-function FeatureCard({ icon, title, description }: FeatureCardProps) {
-  return (
-    <motion.div 
-      className="bg-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-border hover:border-ring/50 transition-colors flex-1 min-w-[280px] group"
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
-      }}
-    >
-       <div className="w-14 h-14 rounded-xl bg-background flex items-center justify-center border border-border text-foreground">
-          {icon}
-       </div>
-       <h3 className="text-lg md:text-xl font-medium text-card-foreground leading-tight">{title}</h3>
-       <div className="text-sm md:text-base text-muted-foreground leading-relaxed">
-          {description}
-       </div>
-    </motion.div>
-  );
-}
-
 export default function FeaturesSection() {
   const { t } = useTranslation();
 
+  const featuresData: FeatureItem[] = [
+    {
+      icon: <CheckCircle2 className="h-6 w-6" aria-hidden="true" />,
+      title: t('features.card1.title'),
+      description: t('features.card1.desc')
+    },
+    {
+      icon: <FileText className="h-6 w-6" aria-hidden="true" />,
+      title: t('features.card2.title'),
+      description: t('features.card2.desc')
+    },
+    {
+      icon: <Clock className="h-6 w-6" aria-hidden="true" />,
+      title: t('features.card3.title'),
+      description: t('features.card3.desc')
+    },
+    {
+      icon: <Globe className="h-6 w-6" aria-hidden="true" />,
+      title: t('features.card4.title'),
+      description: t('features.card4.desc')
+    }
+  ];
+
   return (
-    <section className="bg-secondary/20 border-y border-border">
-        <div className="container mx-auto px-4 md:px-10 py-20 flex flex-col gap-12 items-center">
-          <motion.div 
-            className="flex flex-col gap-4 items-center text-center max-w-xl"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3 }}
-          >
-             <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">{t('features.subtitle')}</span>
-             <h2 className="text-3xl font-medium text-foreground">{t('features.title')}</h2>
-          </motion.div>
-          
-          <motion.div 
-            className="flex flex-col md:flex-row flex-wrap gap-6 w-full justify-center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={{
-              visible: { transition: { staggerChildren: 0.1 } }
-            }}
-          >
-             <FeatureCard 
-               icon={<CheckCircle2 className="w-10 h-10 text-primary" />}
-               title={t('features.card1.title')}
-               description={t('features.card1.desc')}
-             />
-             <FeatureCard 
-               icon={<FileText className="w-10 h-10 text-primary" />}
-               title={t('features.card2.title')}
-               description={t('features.card2.desc')}
-             />
-             <FeatureCard 
-               icon={<Clock className="w-10 h-10 text-primary" />}
-               title={t('features.card3.title')}
-               description={t('features.card3.desc')}
-             />
-             <FeatureCard 
-               icon={<Globe className="w-10 h-10 text-primary" />}
-               title={t('features.card4.title')}
-               description={t('features.card4.desc')}
-             />
-          </motion.div>
-        </div>
+    <section className="relative overflow-hidden bg-surface">
+      {/* Ambient brand highlight */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-40 right-[-10%] h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle_at_center,oklch(0.56_0.19_24_/_8%),transparent_70%)] blur-2xl"
+      />
+
+      <div className="section container-x relative">
+        <Reveal className="max-w-2xl">
+          <span className="eyebrow">{t('features.subtitle')}</span>
+          <h2 className="display-lg mt-4">{t('features.title')}</h2>
+        </Reveal>
+
+        <Stagger className="mt-14 grid grid-cols-1 divide-y divide-border/80 md:grid-cols-2 md:divide-y-0 md:divide-x lg:grid-cols-4">
+          {featuresData.map((feature, index) => (
+            <Item
+              key={feature.title}
+              className="flex flex-col gap-5 py-8 first:pl-0 last:pr-0 md:px-8 md:py-2"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background text-brand shadow-sm">
+                {feature.icon}
+              </div>
+              <span className="nums text-[0.6875rem] font-bold tracking-[0.18em] text-muted-foreground">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <h3 className="text-lg font-bold tracking-tight text-foreground">{feature.title}</h3>
+              <p className="leading-relaxed text-muted-foreground">{feature.description}</p>
+            </Item>
+          ))}
+        </Stagger>
+      </div>
     </section>
   );
 }

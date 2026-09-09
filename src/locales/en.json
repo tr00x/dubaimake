@@ -165,7 +165,11 @@
       "loading": "Logging in...",
       "success": "Login successful",
       "error": "Invalid credentials"
-    }
+    },
+    "add_image_url_hint": "Or paste an image link",
+    "add_image_url_hint_text": "Direct links to JPG, PNG and WebP are supported",
+    "back_to_list": "Back to list",
+    "retry": "Retry"
   },
   "header": {
     "youtube": "YouTube",
@@ -210,7 +214,11 @@
     "docs_insurance": "Documents & Insurance",
     "contact_manager": "Contact Manager",
     "similar_cars": "Similar Cars",
-    "specs": "Specifications"
+    "specs": "Specifications",
+    "prev_image": "Previous photo",
+    "next_image": "Next photo",
+    "prev_cars": "Previous cars",
+    "next_cars": "Next cars"
   },
   "catalog": {
     "title": "Car Catalog",
@@ -246,7 +254,10 @@
     "transmission": "Transmission",
     "drive_type": "Drive Type",
     "fuel_type": "Fuel Type",
-    "engine_capacity": "Engine Capacity"
+    "engine_capacity": "Engine Capacity",
+    "view_all": "All cars",
+    "prev_page": "Previous page",
+    "next_page": "Next page"
   },
   "features": {
     "subtitle": "Why Us",
@@ -393,7 +404,8 @@
       "sending": "Sending...",
       "success": "Message sent! We will contact you shortly.",
       "error": "Error sending message. Please try again later.",
-      "agreement": "By clicking the button, you agree to the personal data processing policy"
+      "agreement": "By clicking the button, you agree to the personal data processing policy",
+      "name_placeholder": "e.g. Azamat"
     },
     "modal": {
       "title": "Contact Manager",
@@ -428,7 +440,9 @@
     "subtitle": "Subscribe to be the first to know about new products, prices and exclusive offers.",
     "channel_label": "YouTube Channel",
     "subscribe": "Subscribe",
-    "fallback_title": "Latest Mashyn Bazar Videos"
+    "fallback_title": "Latest Mashyn Bazar Videos",
+    "prev_videos": "Previous videos",
+    "next_videos": "Next videos"
   },
   "blog": {
     "subtitle": "News and Articles",

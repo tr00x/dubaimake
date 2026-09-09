@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { motion, Variants } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import imgBmwM5Competition from "../assets/5ff7312c3dc0a1014ede77a74beefcf8924374ee.png";
 import {
@@ -19,12 +19,30 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "../components/ui/carousel";
-import { ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck, Palette, Timer, Zap, Route, DollarSign, CarFront } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Gauge,
+  Fuel,
+  Calendar,
+  Cog,
+  BadgeCheck,
+  Mail,
+  UserCheck,
+  FileCheck,
+  ShieldCheck,
+  Palette,
+  Timer,
+  Zap,
+  Route,
+  CarFront,
+} from "lucide-react";
 import client from "../api/client";
 import { CarCard } from "../components/CarCard";
 import ManagerContactModal from "../components/ManagerContactModal";
 import { DrivetrainIcon, EngineIcon } from "../components/ui/Icons";
 import { getLocalizedValue } from "../utils/localization";
+import { EASE } from "../components/motion/Reveal";
 
 type CarData = {
   id: string;
@@ -71,6 +89,9 @@ type CarData = {
   color_en?: string;
 };
 
+/** Tag labels that mean "hot deal" across locales/data sources — mirrors CarCard's chip treatment. */
+const HOT_TAG_LABELS = new Set(["Горячее", "HOT", "Hot"]);
+
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -111,7 +132,7 @@ export default function CarPage() {
     if (!images.length) return;
     setActiveImageIndex((prev) => {
       const newIndex = prev === 0 ? images.length - 1 : prev - 1;
-      api?.scrollTo(newIndex); 
+      api?.scrollTo(newIndex);
       return newIndex;
     });
   };
@@ -139,7 +160,7 @@ export default function CarPage() {
 
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
+
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
@@ -149,7 +170,7 @@ export default function CarPage() {
     } else if (isRightSwipe) {
       handlePrevImage();
     }
-    
+
     // Reset
     touchEndX.current = null;
     touchStartX.current = null;
@@ -161,10 +182,10 @@ export default function CarPage() {
   const scrollSimilar = (direction: 'left' | 'right') => {
     if (similarCarsRef.current) {
       const scrollAmount = 350; // Approx card width + gap
-      const newScrollLeft = direction === 'left' 
+      const newScrollLeft = direction === 'left'
         ? similarCarsRef.current.scrollLeft - scrollAmount
         : similarCarsRef.current.scrollLeft + scrollAmount;
-      
+
       similarCarsRef.current.scrollTo({
         left: newScrollLeft,
         behavior: 'smooth'
@@ -203,8 +224,22 @@ export default function CarPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (loading) return <div className="p-10 text-center">{t('catalog.loading')}</div>;
-  if (!car) return <div className="p-10 text-center">{t('catalog.no_cars')}</div>;
+  if (loading) {
+    return (
+      <div className="container-x flex flex-col gap-10 pt-24 pb-24 md:gap-14 md:pt-32 md:pb-32">
+        <div className="skeleton h-8 w-2/3 max-w-md rounded-xl" />
+        <div className="skeleton aspect-[16/9] w-full rounded-3xl" />
+      </div>
+    );
+  }
+
+  if (!car) {
+    return (
+      <div className="container-x flex min-h-[50vh] items-center justify-center py-24 text-center text-muted-foreground">
+        {t('catalog.no_cars')}
+      </div>
+    );
+  }
 
   const images = car.images && car.images.length > 0
     ? car.images.map(i => i.pathOrUrl)
@@ -217,14 +252,14 @@ export default function CarPage() {
   const fuelType = getLocalizedValue(t, currentLang, car.fuelType_ru, car.fuelType_en, car.fuelType, 'filter_');
   const transmission = getLocalizedValue(t, currentLang, car.transmission_ru, car.transmission_en, car.transmission, 'filter_');
   const condition = getLocalizedValue(t, currentLang, car.condition_ru, car.condition_en, car.condition, 'filter_');
-  
+
   const bodyType = getLocalizedValue(t, currentLang, car.bodyType_ru, car.bodyType_en, car.bodyType || "");
   const driveType = getLocalizedValue(t, currentLang, car.driveType_ru, car.driveType_en, car.driveType || "");
   const color = getLocalizedValue(t, currentLang, car.color_ru, car.color_en, car.color || "", 'color_');
-  
+
   const rawDescription = currentLang === 'en' ? (car.description_en || car.descriptionMd) : (car.description_ru || car.descriptionMd);
   const specsField = currentLang === 'en' ? car.specs_en : car.specs_ru;
-  
+
   const descriptionMain = rawDescription?.split("**Комплектация:**")[0];
   const descriptionSpecs = rawDescription?.split("**Комплектация:**")[1];
   const finalSpecs = specsField || descriptionSpecs;
@@ -232,12 +267,13 @@ export default function CarPage() {
   // Transform DB data to Display format
   const rawTags = currentLang === 'en' ? (car.tags_en || car.tags) : (car.tags_ru || car.tags);
   const rawTagsList = rawTags ? rawTags.split(',').filter(tag => tag.trim() !== '') : [];
-  const tagsList = rawTagsList.filter(t => 
-    t.trim() !== car.year.toString() && 
-    t.trim().toLowerCase() !== fuelType.toLowerCase() && 
-    t.trim().toLowerCase() !== transmission.toLowerCase()
+  const tagsList = rawTagsList.filter(tag =>
+    tag.trim() !== car.year.toString() &&
+    tag.trim().toLowerCase() !== fuelType.toLowerCase() &&
+    tag.trim().toLowerCase() !== transmission.toLowerCase()
   );
-  
+  const isHotTag = (tag: string) => HOT_TAG_LABELS.has(tag.trim());
+
   const priceStr = `$${car.priceUsd.toLocaleString()}`;
   const distanceUnit = currentLang === 'en' ? 'km' : 'км';
   const topSpeedStr = car.topSpeed ? `${car.topSpeed} ${t('catalog.kmh')}` : "";
@@ -250,32 +286,20 @@ export default function CarPage() {
   const colorStr = color || "";
 
   const SpecTile = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="rounded-xl border border-border bg-secondary/20 p-4 flex items-start gap-3 min-w-0">
-      <div className="w-9 h-9 rounded-lg bg-background/80 border border-border flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-muted-foreground" />
+    <div className="flex min-w-0 flex-col gap-3 rounded-2xl bg-surface p-4 md:p-5">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background shadow-sm">
+        <Icon className="h-5 w-5 text-muted-foreground" />
       </div>
-      <div className="min-w-0">
-        <div className="text-xs text-muted-foreground font-medium leading-tight">{label}</div>
-        <div className="text-lg md:text-xl font-semibold text-foreground leading-tight break-words">{value}</div>
-      </div>
-    </div>
-  );
-
-  const PriceTile = ({ value }: { value: string }) => (
-    <div className="rounded-xl border border-foreground/15 bg-foreground text-background p-4 flex items-start gap-3 min-w-0">
-      <div className="w-9 h-9 rounded-lg bg-background/10 border border-white/10 flex items-center justify-center shrink-0">
-        <DollarSign className="w-5 h-5 text-background" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-xs text-background/70 font-medium leading-tight">{t('car_page.price')}</div>
-        <div className="text-lg md:text-xl font-semibold text-background leading-tight break-words">{value}</div>
+      <div className="flex min-w-0 flex-col gap-1">
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+        <div className="nums break-words text-lg font-bold tracking-tight text-foreground md:text-xl">{value}</div>
       </div>
     </div>
   );
 
   return (
-    <motion.section 
-      className="max-w-[1400px] mx-auto px-4 md:px-10 pt-24 md:pt-32 pb-24 md:pb-36 flex flex-col gap-6"
+    <motion.section
+      className="container-x flex flex-col gap-10 pt-24 pb-24 md:gap-14 md:pt-32 md:pb-32"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -298,135 +322,108 @@ export default function CarPage() {
         </Breadcrumb>
       </motion.div>
 
-      {showSticky && (
-        <motion.div 
-          className="sticky top-[72px] z-40"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-        >
-          <div className="bg-background/90 backdrop-blur-md border border-border rounded-xl px-4 py-3 flex items-center justify-between">
-            <div className="flex flex-col gap-1 md:gap-0 md:flex-row md:items-center">
-              <span className="text-[15px] font-bold text-foreground mr-4">{title}</span>
-              
-            <div className="flex items-center gap-3 text-xs md:text-sm text-muted-foreground font-medium">
-              {car.year ? (
-                <span className="flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {car.year}
-                </span>
-              ) : null}
-              {car.horsepower ? (
-                <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
-                  <Gauge className="w-3.5 h-3.5" />
-                  {car.horsepower} {t('catalog.hp')}
-                </span>
-              ) : null}
-              {fuelType ? (
-                <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
-                  <Fuel className="w-3.5 h-3.5" />
-                  {fuelType}
-                </span>
-              ) : null}
-            </div>
-            </div>
-
-            <div className="flex items-center gap-3 ml-auto">
-              <div className="hidden md:flex gap-2">
-                {tagsList.map((t) => (
-                  <span key={t} className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-border text-foreground"}`}>{t}</span>
-                ))}
-              </div>
-              <div className="px-5 py-2.5 bg-foreground text-background rounded-xl font-semibold tracking-tight whitespace-nowrap">
-                {priceStr}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div className="flex flex-col gap-5" variants={itemVariants}>
-          <h1 className="text-3xl md:text-4xl font-medium text-foreground leading-tight">
-            {title}
-          </h1>
-          <div className="flex flex-wrap gap-2">
-            {car.year ? (
-              <span className="px-2.5 py-1 rounded-md border border-border text-foreground text-[11px] font-semibold uppercase tracking-wider">
-                {car.year}
-              </span>
-            ) : null}
-            {tagsList.map((tag) => (
-              <span
-                key={tag}
-                className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold uppercase tracking-wider ${tag === "Горячее" ? "border-red-500 text-red-600" : "border-border text-foreground"}`}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-
-          <div className="pt-4 border-t border-border">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {topSpeedStr ? <SpecTile icon={Gauge} label={t('car_card.speed')} value={topSpeedStr} /> : null}
-              {accelStr ? <SpecTile icon={Timer} label={t('car_card.acceleration')} value={accelStr} /> : null}
-              {hpStr ? <SpecTile icon={Zap} label={t('car_card.power')} value={hpStr} /> : null}
-              {fuelType ? <SpecTile icon={Fuel} label={t('catalog.fuel_type')} value={fuelType} /> : null}
-              {transmission ? <SpecTile icon={Cog} label={t('catalog.transmission')} value={transmission} /> : null}
-              {bodyTypeStr ? <SpecTile icon={CarFront} label={t('catalog.body_type')} value={bodyTypeStr} /> : null}
-              {engineCapacityStr ? <SpecTile icon={EngineIcon} label={t('catalog.engine_capacity')} value={engineCapacityStr} /> : null}
-              {driveTypeStr ? <SpecTile icon={DrivetrainIcon} label={t('catalog.drive_type')} value={driveTypeStr} /> : null}
-              {colorStr ? <SpecTile icon={Palette} label={t('catalog.color')} value={colorStr} /> : null}
-              {mileageStr ? <SpecTile icon={Route} label={t('catalog.mileage')} value={mileageStr} /> : null}
-              {condition ? <SpecTile icon={BadgeCheck} label={t('car_page.condition')} value={condition} /> : null}
-              {car.priceUsd ? <PriceTile value={priceStr} /> : null}
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div className="relative" variants={itemVariants}>
-          <div 
-            className="relative aspect-[4/3] w-full overflow-hidden rounded-xl touch-pan-y"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+      <AnimatePresence>
+        {showSticky && (
+          <motion.div
+            className="sticky top-[72px] z-40"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.4, ease: EASE }}
           >
-            <motion.img
-              key={activeImageIndex}
-              src={images[activeImageIndex]}
-              alt={title}
-              className="w-full h-full object-cover"
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-        </motion.div>
-      </div>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/80 px-4 py-3 shadow-md backdrop-blur-xl md:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="truncate text-sm font-bold text-foreground">{title}</span>
+                <div className="hidden items-center gap-2 sm:flex">
+                  {car.year ? (
+                    <span className="chip chip--outline nums">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {car.year}
+                    </span>
+                  ) : null}
+                  {hpStr ? (
+                    <span className="chip chip--outline nums">
+                      <Zap className="h-3.5 w-3.5" />
+                      {hpStr}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <span className="nums whitespace-nowrap font-bold text-foreground">{priceStr}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <motion.div className="flex flex-col gap-3" variants={itemVariants}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-semibold">{t('car_page.more_photos')}</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={handlePrevImage}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
-              aria-label="Previous image"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleNextImage}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
-              aria-label="Next image"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+      {/* Title block */}
+      <motion.div className="grid grid-cols-1 items-end gap-8 lg:grid-cols-12" variants={itemVariants}>
+        <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
+          <span className="eyebrow">
+            {car.year}
+            {condition ? ` · ${condition}` : ""}
+          </span>
+          <h1 className="display-lg text-foreground">{title}</h1>
+          {tagsList.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tagsList.map((tag) => (
+                <span key={tag} className={`chip ${isHotTag(tag) ? "chip--brand" : "chip--outline"}`}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        
+
+        <div className="flex flex-col gap-1 lg:col-span-4 lg:items-end lg:text-right">
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            {t('car_page.price')}
+          </span>
+          <span className="nums font-display text-[2.2rem] font-medium tracking-tight text-foreground md:text-[2.6rem]">
+            {priceStr}
+          </span>
+        </div>
+      </motion.div>
+
+      {/* Gallery */}
+      <motion.div className="flex flex-col gap-4" variants={itemVariants}>
+        <div
+          className="relative aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-3xl bg-surface-2 md:aspect-[16/9]"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <motion.img
+            key={activeImageIndex}
+            src={images[activeImageIndex]}
+            alt={title}
+            className="h-full w-full object-cover"
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: EASE }}
+          />
+
+          <button
+            type="button"
+            onClick={handlePrevImage}
+            className="icon-btn absolute left-4 top-1/2 z-10 -translate-y-1/2 border-white/40 bg-white/85 text-ink backdrop-blur-md"
+            aria-label={t('car_page.prev_image')}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNextImage}
+            className="icon-btn absolute right-4 top-1/2 z-10 -translate-y-1/2 border-white/40 bg-white/85 text-ink backdrop-blur-md"
+            aria-label={t('car_page.next_image')}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <span className="chip chip--glass nums absolute bottom-4 right-4 z-10">
+            {activeImageIndex + 1} / {images.length}
+          </span>
+        </div>
+
         <div className="px-1">
           <Carousel
             setApi={setApi}
@@ -438,23 +435,25 @@ export default function CarPage() {
           >
             <CarouselContent className="-ml-2 md:-ml-4 lg:-ml-6">
               {images.map((src, idx) => (
-                <CarouselItem key={idx} className="pl-2 md:pl-4 lg:pl-6 basis-1/2 sm:basis-1/3 md:basis-1/4">
+                <CarouselItem key={idx} className="basis-1/2 pl-2 sm:basis-1/3 md:basis-1/4 md:pl-4 lg:pl-6">
                   <div className="relative w-full p-1">
                     <button
+                      type="button"
                       onClick={() => {
                         setActiveImageIndex(idx);
                         api?.scrollTo(idx);
                       }}
-                      className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl transition-all hover:opacity-90 ${
+                      aria-current={idx === activeImageIndex}
+                      className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                         idx === activeImageIndex
-                          ? "ring-2 ring-foreground ring-offset-2"
-                          : "border border-border hover:border-muted-foreground"
+                          ? "opacity-100 ring-2 ring-ink ring-offset-2"
+                          : "opacity-70 hover:opacity-100"
                       }`}
                     >
                       <img
                         src={src}
-                        alt={`${car.title} ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        alt={`${title} ${idx + 1}`}
+                        className="h-full w-full object-cover"
                       />
                     </button>
                   </div>
@@ -469,95 +468,112 @@ export default function CarPage() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        <motion.div className="lg:col-span-2 flex flex-col gap-6" variants={itemVariants}>
-          <div>
-            <h2 className="text-xl md:text-2xl font-semibold mb-4">{t('car_page.description')}</h2>
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-line break-words">{descriptionMain}</p>
-          </div>
+      {/* Tech specs */}
+      <motion.div className="flex flex-col gap-5" variants={itemVariants}>
+        <h2 className="display-md">{t('catalog.tech_specs')}</h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+          {topSpeedStr ? <SpecTile icon={Gauge} label={t('car_card.speed')} value={topSpeedStr} /> : null}
+          {accelStr ? <SpecTile icon={Timer} label={t('car_card.acceleration')} value={accelStr} /> : null}
+          {hpStr ? <SpecTile icon={Zap} label={t('car_card.power')} value={hpStr} /> : null}
+          {fuelType ? <SpecTile icon={Fuel} label={t('catalog.fuel_type')} value={fuelType} /> : null}
+          {transmission ? <SpecTile icon={Cog} label={t('catalog.transmission')} value={transmission} /> : null}
+          {bodyTypeStr ? <SpecTile icon={CarFront} label={t('catalog.body_type')} value={bodyTypeStr} /> : null}
+          {engineCapacityStr ? <SpecTile icon={EngineIcon} label={t('catalog.engine_capacity')} value={engineCapacityStr} /> : null}
+          {driveTypeStr ? <SpecTile icon={DrivetrainIcon} label={t('catalog.drive_type')} value={driveTypeStr} /> : null}
+          {colorStr ? <SpecTile icon={Palette} label={t('catalog.color')} value={colorStr} /> : null}
+          {mileageStr ? <SpecTile icon={Route} label={t('catalog.mileage')} value={mileageStr} /> : null}
+          {condition ? <SpecTile icon={BadgeCheck} label={t('car_page.condition')} value={condition} /> : null}
+        </div>
+      </motion.div>
 
-
+      {/* Description + consultation */}
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+        <motion.div className="flex flex-col gap-4 lg:col-span-7" variants={itemVariants}>
+          <h2 className="display-md">{t('car_page.description')}</h2>
+          <p className="max-w-[65ch] whitespace-pre-line break-words leading-relaxed text-muted-foreground">
+            {descriptionMain}
+          </p>
         </motion.div>
 
-        <motion.div className="flex flex-col gap-3" variants={itemVariants}>
-          <div className="rounded-xl border border-border p-6 bg-background sticky top-[100px] flex flex-col gap-6">
-            <div>
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t('car_page.consultation')}</span>
-              <p className="text-lg font-medium mt-3 text-foreground leading-snug">{t('car_page.consultation_desc')}</p>
+        <motion.div className="lg:col-span-5" variants={itemVariants}>
+          <div className="grain sticky top-28 flex flex-col gap-6 overflow-hidden rounded-3xl bg-ink p-7 text-white md:p-8">
+            <div className="relative flex flex-col gap-3">
+              <span className="eyebrow eyebrow--light">{t('car_page.consultation')}</span>
+              <p className="text-lg font-semibold leading-snug">{t('car_page.consultation_desc')}</p>
             </div>
-            
-            <div className="w-full h-px bg-border"></div>
 
-            <ul className="flex flex-col gap-4">
-              <li className="flex items-center gap-2 text-sm text-foreground">
-                <UserCheck className="w-5 h-5 text-muted-foreground" />
+            <div className="relative h-px w-full bg-white/15" />
+
+            <ul className="relative flex flex-col gap-4">
+              <li className="flex items-center gap-3 text-sm">
+                <UserCheck className="h-5 w-5 shrink-0 text-white/80" />
                 <span className="font-medium">{t('car_page.personal_manager')}</span>
               </li>
-              <li className="flex items-center gap-2 text-sm text-foreground">
-                <FileCheck className="w-5 h-5 text-muted-foreground" />
+              <li className="flex items-center gap-3 text-sm">
+                <FileCheck className="h-5 w-5 shrink-0 text-white/80" />
                 <span className="font-medium">{t('car_page.transparent_terms')}</span>
               </li>
-              <li className="flex items-center gap-2 text-sm text-foreground">
-                <ShieldCheck className="w-5 h-5 text-muted-foreground"  />
+              <li className="flex items-center gap-3 text-sm">
+                <ShieldCheck className="h-5 w-5 shrink-0 text-white/80" />
                 <span className="font-medium">{t('car_page.docs_insurance')}</span>
               </li>
             </ul>
 
             <ManagerContactModal carTitle={title} carId={car.id} carPrice={priceStr} carImage={images[0]}>
-              <button className="mt-4 w-full group relative overflow-hidden rounded-xl bg-foreground text-background py-4 font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]">
-                <div className="relative z-10 flex items-center justify-center gap-2">
-                  <Mail className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:-rotate-12" />
-                  <span>{t('car_page.contact_manager')}</span>
-                </div>
-                <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+              <button type="button" className="btn btn-white relative w-full">
+                <Mail className="btn-icon h-5 w-5" />
+                <span>{t('car_page.contact_manager')}</span>
               </button>
             </ManagerContactModal>
           </div>
         </motion.div>
       </div>
 
+      {/* Similar cars */}
       {similarCars.length > 0 && (
-        <motion.div className="flex flex-col gap-4 mt-24" variants={itemVariants}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-semibold">{t('car_page.similar_cars')}</h2>
+        <motion.div className="flex flex-col gap-5" variants={itemVariants}>
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="display-md">{t('car_page.similar_cars')}</h2>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => scrollSimilar('left')}
-                className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
-                aria-label="Scroll left"
+                className="icon-btn"
+                aria-label={t('car_page.prev_cars')}
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button
+                type="button"
                 onClick={() => scrollSimilar('right')}
-                className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
-                aria-label="Scroll right"
+                className="icon-btn"
+                aria-label={t('car_page.next_cars')}
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
-          
-          <div 
+
+          <div
             ref={similarCarsRef}
-            className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+            className="scrollbar-hide flex snap-x snap-mandatory gap-6 overflow-x-auto pb-4"
           >
             {similarCars.map((item) => {
               const mainImg = item.images?.find(i => i.isMain)?.pathOrUrl || item.images?.[0]?.pathOrUrl || imgBmwM5Competition;
-              
+
               // Localization for similar cars
               const itemTitle = currentLang === 'en' ? (item.title_en || item.title) : (item.title_ru || item.title);
               const itemFuel = getLocalizedValue(t, currentLang, item.fuelType_ru, item.fuelType_en, item.fuelType, 'filter_');
               const itemTrans = getLocalizedValue(t, currentLang, item.transmission_ru, item.transmission_en, item.transmission, 'filter_');
               const itemDriveType = getLocalizedValue(t, currentLang, item.driveType_ru, item.driveType_en, item.driveType || "");
-              
+
               const itemRawTags = currentLang === 'en' ? (item.tags_en || item.tags) : (item.tags_ru || item.tags);
               const itemTags = itemRawTags ? itemRawTags.split(',').filter(tag => tag.trim() !== '') : [];
               const itemHp = item.horsepower ? `${item.horsepower} ${t('catalog.hp')}` : "";
               const itemZeroTo100 = item.acceleration ? `${item.acceleration} ${t('catalog.sec')}` : "";
 
               return (
-                <div key={item.id} className="min-w-[280px] md:min-w-[320px] snap-start">
+                <div key={item.id} className="min-w-[300px] snap-start md:min-w-[340px]">
                   <CarCard
                     title={itemTitle}
                     image={mainImg}
