@@ -54,12 +54,18 @@ interface RingCardProps {
   radius: number;
   width: number;
   angle: MotionValue<number>;
+  tilt: MotionValue<number>;
   title: string;
   price: string;
   onSelect: (index: number) => void;
 }
 
-function RingCard({ car, index, step, radius, width, angle, title, price, onSelect }: RingCardProps) {
+function RingCard({ car, index, step, radius, width, angle, tilt, title, price, onSelect }: RingCardProps) {
+  // Each card computes its own full 3D transform inside the perspective stage. Nested
+  // `transform-style: preserve-3d` groups are flattened by Safari, so no ring element.
+  const transform = useTransform([angle, tilt], ([a, t]: number[]) =>
+    `translateZ(${-radius}px) rotateX(${t}deg) rotateY(${a + index * step}deg) translateZ(${radius}px)`
+  );
   // Relative angle of this card to the camera: 0 = facing front, ±180 = at the back.
   const rel = useTransform(angle, (a) => mod(a + index * step + 180, 360) - 180);
   const facing = useTransform(rel, (r) => (Math.cos((r * Math.PI) / 180) + 1) / 2); // 1 front .. 0 back
@@ -69,16 +75,22 @@ function RingCard({ car, index, step, radius, width, angle, title, price, onSele
   const image = car.images?.find((i) => i.isMain)?.pathOrUrl || car.images?.[0]?.pathOrUrl || imgFallback;
 
   return (
-    <div
-      className="absolute left-1/2 top-0 [transform-style:preserve-3d]"
-      style={{ width, marginLeft: -width / 2, transform: `rotateY(${index * step}deg) translateZ(${radius}px)` }}
+    <motion.div
+      className="absolute left-1/2 top-2"
+      style={{
+        width,
+        marginLeft: -width / 2,
+        transform,
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+      }}
     >
       <motion.button
         type="button"
         onClick={() => onSelect(index)}
         aria-label={`${title}, ${price}`}
-        className="group/rc relative block w-full overflow-hidden rounded-2xl bg-ink-2 text-left ring-1 ring-white/10 [backface-visibility:hidden]"
-        style={{ scale }}
+        className="group/rc relative block w-full overflow-hidden rounded-2xl bg-ink-2 text-left ring-1 ring-white/10"
+        style={{ scale, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
       >
         <div className="relative aspect-[4/3] w-full">
           <img src={image} alt="" draggable={false} decoding="async" className="h-full w-full object-cover" />
@@ -105,7 +117,7 @@ function RingCard({ car, index, step, radius, width, angle, title, price, onSele
       >
         <img src={image} alt="" draggable={false} decoding="async" className="h-full w-full object-cover" />
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -249,7 +261,7 @@ export default function Showroom() {
   if (!n) return null;
 
   return (
-    <section className="relative isolate overflow-hidden bg-ink text-white grain" aria-label={t("showroom.title")}>
+    <section className="relative bg-ink text-white grain [overflow-x:clip]" aria-label={t("showroom.title")}>
       {/* Spotlight + floor */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[70%] w-[80%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgb(255_255_255_/_0.10),transparent_65%)]" />
@@ -307,29 +319,23 @@ export default function Showroom() {
             hovering.current = true;
           }}
           className="relative mx-auto w-full cursor-grab select-none touch-pan-y outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-white/40 rounded-3xl"
-          style={{ height: stageHeight * 1.42, perspective: 1500, perspectiveOrigin: "50% 40%" }}
+          style={{ height: stageHeight * 1.42, perspective: 1500, WebkitPerspective: 1500, perspectiveOrigin: "50% 40%", WebkitPerspectiveOrigin: "50% 40%" }}
         >
-          <motion.div
-            className="absolute left-0 right-0 top-2 h-full [transform-style:preserve-3d]"
-            style={{ rotateY: angle, rotateX: tilt, transformOrigin: `50% 50% -${radius}px` }}
-          >
-            <div className="absolute left-0 right-0 top-0 [transform-style:preserve-3d]" style={{ transform: `translateZ(-${radius}px)` }}>
-              {cars.map((car, i) => (
-                <RingCard
-                  key={car.id}
-                  car={car}
-                  index={i}
-                  step={step}
-                  radius={radius}
-                  width={cardWidth}
-                  angle={angle}
-                  title={titleOf(car)}
-                  price={priceOf(car)}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          </motion.div>
+          {cars.map((car, i) => (
+            <RingCard
+              key={car.id}
+              car={car}
+              index={i}
+              step={step}
+              radius={radius}
+              width={cardWidth}
+              angle={angle}
+              tilt={tilt}
+              title={titleOf(car)}
+              price={priceOf(car)}
+              onSelect={onSelect}
+            />
+          ))}
         </div>
 
         {/* Dots */}
