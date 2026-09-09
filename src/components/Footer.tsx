@@ -5,7 +5,6 @@ import { LogoIcon } from "./ui/Icons";
 
 const NAV_LINKS = [
   { key: "header.youtube", href: "/#youtube" },
-  { key: "header.catalog", href: "/#catalog" },
   { key: "header.services", href: "/#services" },
   { key: "header.contacts", href: "/#contacts" },
 ] as const;

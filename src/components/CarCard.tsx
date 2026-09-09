@@ -50,7 +50,8 @@ export function CarCard({
       <div
         className={cn(
           "relative w-full overflow-hidden bg-surface-2",
-          featured ? "aspect-[4/3] lg:aspect-[16/10]" : "aspect-[4/3]",
+          // featured spans two grid rows on lg+: the image grows to fill the extra height
+          featured ? "aspect-[4/3] lg:aspect-auto lg:min-h-[360px] lg:flex-1" : "aspect-[4/3]",
         )}
       >
         <img
@@ -72,7 +73,7 @@ export function CarCard({
           {tags.map((tag, idx) => (
             <span
               key={`${tag}-${idx}`}
-              className={cn("chip", HOT_LABELS.has(tag.trim()) ? "chip--brand" : "chip--glass")}
+              className={cn("chip", HOT_LABELS.has(tag.trim()) ? "bg-brand text-white shadow-sm" : "chip--glass")}
             >
               {tag}
             </span>
@@ -89,7 +90,7 @@ export function CarCard({
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className={cn("flex flex-col gap-3 p-5", featured ? "flex-1 lg:flex-none" : "flex-1")}>
         <h3
           className={cn(
             "line-clamp-2 text-foreground",
@@ -188,7 +189,7 @@ export function CarCardSkeleton({ variant = "default" }: { variant?: "default" |
   const featured = variant === "featured";
   return (
     <div className="surface-card flex flex-col overflow-hidden rounded-[1.25rem]" aria-hidden="true">
-      <div className={cn("skeleton w-full rounded-none", featured ? "aspect-[4/3] lg:aspect-[16/10]" : "aspect-[4/3]")} />
+      <div className={cn("skeleton w-full rounded-none", featured ? "aspect-[4/3] lg:aspect-auto lg:min-h-[360px] lg:flex-1" : "aspect-[4/3]")} />
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="skeleton h-5 w-4/5 rounded-lg" />
         <div className="flex gap-1.5">

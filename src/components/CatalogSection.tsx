@@ -664,7 +664,7 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
 
               // Transform DB data to UI props
               return (
-                <Item key={`${car.id}-${idx}`} className={cn(isFeatured && "lg:col-span-2")}>
+                <Item key={`${car.id}-${idx}`} className={cn("h-full", isFeatured && "lg:col-span-2 lg:row-span-2")}>
                   <CarCard
                     id={car.id}
                     title={title}
@@ -680,8 +680,8 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
                       driveType: driveType
                     }}
                     specs={{
-                      hp: car.horsepower ? `${car.horsepower} hp` : '',
-                      zeroTo100: car.acceleration ? `${car.acceleration}s` : ''
+                      hp: car.horsepower ? `${car.horsepower} ${t('catalog.hp')}` : '',
+                      zeroTo100: car.acceleration ? `${car.acceleration} ${t('catalog.sec')}` : ''
                     }}
                   />
                 </Item>
