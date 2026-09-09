@@ -25,8 +25,9 @@ if [ ! -f .env ]; then cp "$BACKUP_DIR/masynbazar-$TS.env" .env; echo "restored 
 echo "==> Install dependencies"
 npm ci --no-audit --no-fund
 
-echo "==> Prisma client"
+echo "==> Prisma client + migrations"
 npx prisma generate
+npx prisma migrate deploy
 
 echo "==> Build frontend"
 npm run build

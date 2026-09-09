@@ -11,6 +11,7 @@ import AdminLogin from "./admin/AdminLogin";
 import AdminCarList from "./admin/AdminCarList";
 import CarEditor from "./admin/CarEditor";
 import AdminSettings from "./admin/AdminSettings";
+import AdminShowroom from "./admin/AdminShowroom";
 import TranslationEditor from "./admin/TranslationEditor";
 import { registerSW } from 'virtual:pwa-register';
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="cars/new" element={<CarEditor />} />
         <Route path="cars/:id" element={<CarEditor />} />
         <Route path="translations" element={<TranslationEditor />} />
+        <Route path="showroom" element={<AdminShowroom />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
     </Routes>

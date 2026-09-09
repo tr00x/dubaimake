@@ -126,15 +126,28 @@ export default function Showroom() {
   const drag = useRef({ startX: 0, startAngle: 0, lastX: 0, lastT: 0, velocity: 0, moved: false });
 
   useEffect(() => {
+    let cancelled = false;
+    const auto = async () => {
+      // No curated list (or fewer than 3 cars): show the catalog automatically, Hot/New first.
+      const res = await client.get("/cars");
+      const list = (res.data as CarLite[]).filter((c) => c.images?.length);
+      const weight = (c: CarLite) => (/(^|,)\s*(hot|горячее)\s*(,|$)/i.test(c.tags || "") ? 2 : /(^|,)\s*(new|новое)\s*(,|$)/i.test(c.tags || "") ? 1 : 0);
+      list.sort((a, b) => weight(b) - weight(a));
+      return list.slice(0, MAX_CARS);
+    };
     client
-      .get("/cars")
-      .then((res) => {
-        const list = (res.data as CarLite[]).filter((c) => c.images?.length);
-        const weight = (c: CarLite) => (/(^|,)\s*(hot|горячее)\s*(,|$)/i.test(c.tags || "") ? 2 : /(^|,)\s*(new|новое)\s*(,|$)/i.test(c.tags || "") ? 1 : 0);
-        list.sort((a, b) => weight(b) - weight(a));
-        setCars(list.slice(0, MAX_CARS));
+      .get("/showroom")
+      .then(async (res) => {
+        const picked = (res.data as CarLite[]).filter((c) => c.images?.length);
+        return picked.length >= 3 ? picked.slice(0, MAX_CARS) : auto();
       })
-      .catch(() => setCars([]));
+      .catch(() => auto().catch(() => []))
+      .then((list) => {
+        if (!cancelled) setCars(list);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const n = cars.length;

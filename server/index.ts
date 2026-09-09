@@ -422,6 +422,57 @@ app.get('/api/contact-info', (req, res) => {
     });
 });
 
+// Showroom: cars picked in the admin for the 3D turntable, in the configured order
+app.get('/api/showroom', async (req, res) => {
+    try {
+        const cars = await prisma.car.findMany({
+            where: { showroom: true, status: 'active' },
+            include: { images: { orderBy: { sortOrder: 'asc' } } },
+            orderBy: { showroomOrder: 'asc' },
+        });
+        res.set('Cache-Control', 'public, max-age=60');
+        res.json(cars);
+    } catch (error) {
+        console.error('Showroom fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch showroom' });
+    }
+});
+
+app.get('/api/admin/showroom', requireAuth, async (req, res) => {
+    try {
+        const cars = await prisma.car.findMany({
+            select: {
+                id: true, title: true, title_ru: true, title_en: true, priceUsd: true, year: true, status: true,
+                showroom: true, showroomOrder: true,
+                images: { orderBy: { sortOrder: 'asc' }, take: 1, select: { pathOrUrl: true, isMain: true } },
+            },
+            orderBy: [{ showroomOrder: 'asc' }, { createdAt: 'desc' }],
+        });
+        res.json(cars);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch cars' });
+    }
+});
+
+// Replace the showroom selection: body { ids: string[] } in display order
+app.put('/api/admin/showroom', requireAuth, async (req, res) => {
+    const ids: unknown = req.body?.ids;
+    if (!Array.isArray(ids) || ids.some(id => typeof id !== 'string') || ids.length > 20) {
+        return res.status(400).json({ error: 'ids must be an array of up to 20 car ids' });
+    }
+    const unique = Array.from(new Set(ids as string[]));
+    try {
+        await prisma.$transaction([
+            prisma.car.updateMany({ data: { showroom: false, showroomOrder: 0 } }),
+            ...unique.map((id, index) => prisma.car.update({ where: { id }, data: { showroom: true, showroomOrder: index } })),
+        ]);
+        res.json({ success: true, count: unique.length });
+    } catch (error) {
+        console.error('Showroom update error:', error);
+        res.status(500).json({ error: 'Failed to update showroom' });
+    }
+});
+
 // Cars
 app.get('/api/cars', async (req, res) => {
     const { admin } = req.query;
