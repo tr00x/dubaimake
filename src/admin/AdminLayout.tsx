@@ -50,9 +50,19 @@ export default function AdminLayout() {
     const SidebarContent = () => (
         <>
             <div className="admin-sidebar-header">
-                <span className={`admin-brand ${collapsed ? 'collapsed' : ''}`}>
-                    {collapsed ? 'MB' : 'MashynBazar Admin'}
+                <span className={`admin-brand ${collapsed ? 'hidden' : ''}`}>
+                    MashynBazar Admin
                 </span>
+                
+                {/* Desktop Collapse Toggle */}
+                <button 
+                    className={`p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors desktop-only flex ${collapsed ? '' : ''}`}
+                    onClick={() => setCollapsed(!collapsed)}
+                    title={collapsed ? t('admin.sidebar.expand') : t('admin.sidebar.collapse')}
+                >
+                    {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                </button>
+
                 <button 
                     className="admin-mobile-toggle md:hidden" 
                     onClick={() => setMobileMenuOpen(false)}
@@ -116,14 +126,7 @@ export default function AdminLayout() {
                          <span className="font-medium text-sm">{i18n.language.startsWith('ru') ? 'RU' : 'EN'}</span>
                     </button>
 
-                    {/* Collapse Toggle */}
-                    <button 
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors md:flex hidden"
-                        onClick={() => setCollapsed(!collapsed)}
-                        title={collapsed ? t('admin.sidebar.expand') : t('admin.sidebar.collapse')}
-                    >
-                        {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-                    </button>
+
 
                     {/* Logout */}
                     <button

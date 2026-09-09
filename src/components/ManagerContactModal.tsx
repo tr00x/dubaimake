@@ -13,6 +13,7 @@ import { Send, Car, User, MessageSquare, Loader2, Phone } from "lucide-react";
 import client from "../api/client";
 import { WhatsAppIcon, TelegramIcon } from "./ui/Icons";
 import { useTranslation } from "react-i18next";
+import { useContactGuard, CaptchaField } from "./ContactGuard";
 
 interface ManagerContactModalProps {
   carTitle?: string;
@@ -38,6 +39,7 @@ export default function ManagerContactModal({
     contact: "",
     message: "",
   });
+  const guard = useContactGuard(open);
 
   React.useEffect(() => {
     if (open) {
@@ -49,9 +51,19 @@ export default function ManagerContactModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!guard.challenge) {
+      toast.error(t('contact.captcha.error_expired'));
+      guard.refresh();
+      return;
+    }
+    if (!guard.ready) {
+      toast.error(t('contact.captcha.error_wrong'));
+      return;
+    }
     setLoading(true);
 
     try {
+      await guard.waitForMinDelay();
       await client.post('/contact', {
         ...formData,
         carTitle,
@@ -60,6 +72,7 @@ export default function ManagerContactModal({
         carImage,
         link: window.location.href,
         source: 'Manager Button (Modal)',
+        ...guard.payload(),
       });
 
       toast.success(t('contact.modal.success'));
@@ -67,7 +80,7 @@ export default function ManagerContactModal({
       setFormData({ name: "", contact: "", message: "" });
     } catch (error) {
       console.error(error);
-      toast.error(t('contact.modal.error'));
+      toast.error(guard.handleError(error, t('contact.modal.error')));
     } finally {
       setLoading(false);
     }
@@ -243,9 +256,11 @@ export default function ManagerContactModal({
             </div>
           </div>
 
+          <CaptchaField guard={guard} variant="modal" />
+
           <button 
             type="submit" 
-            disabled={loading} 
+            disabled={loading || guard.loading} 
             className="mt-1 w-full flex items-center justify-center gap-2 bg-foreground text-background hover:bg-foreground/90 h-10 text-sm font-semibold rounded-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (

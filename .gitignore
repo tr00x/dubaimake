@@ -9,3 +9,4 @@ build
 server/uploads
 *.db
 prisma/*.db
+server/logs

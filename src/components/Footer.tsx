@@ -20,8 +20,8 @@ export default function Footer() {
           <div className="flex flex-col gap-6 max-w-[400px]">
              {/* Logo */}
             <Link to="/" className="inline-block">
-                <div className="h-[40px] text-white w-auto">
-                    <LogoIcon className="h-full w-auto fill-current" />
+                <div className="h-[56px] w-auto bg-white rounded-lg px-3 py-2 flex items-center justify-center">
+                    <LogoIcon className="h-full w-auto" />
                 </div>
             </Link>
             

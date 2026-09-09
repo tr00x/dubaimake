@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import client from "../api/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Bot, Users, Save, Trash2, Plus, Eye, EyeOff, Copy, Check, Lock } from "lucide-react";
+import { Bot, Users, Save, Trash2, Plus, Eye, EyeOff, Copy, Check, Lock, ShieldCheck } from "lucide-react";
 
 export default function AdminSettings() {
   const { t } = useTranslation();
@@ -12,6 +12,10 @@ export default function AdminSettings() {
   const [managerWhatsapp, setManagerWhatsapp] = useState("");
   const [managerTelegram, setManagerTelegram] = useState("");
   const [chatIds, setChatIds] = useState<string[]>([]);
+  const [captchaMode, setCaptchaMode] = useState("auto");
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
+  const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
   const [newChatId, setNewChatId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +44,15 @@ export default function AdminSettings() {
       }
       if (res.data.ADMIN_USERNAME) {
         setUsername(res.data.ADMIN_USERNAME);
+      }
+      if (res.data.CAPTCHA_MODE) {
+        setCaptchaMode(res.data.CAPTCHA_MODE);
+      }
+      if (res.data.TURNSTILE_SITE_KEY) {
+        setTurnstileSiteKey(res.data.TURNSTILE_SITE_KEY);
+      }
+      if (res.data.TURNSTILE_SECRET_KEY) {
+        setTurnstileSecretKey(res.data.TURNSTILE_SECRET_KEY);
       }
     } catch (error) {
       console.error("Failed to fetch settings", error);
@@ -72,7 +85,10 @@ export default function AdminSettings() {
         TELEGRAM_BOT_TOKEN: botToken,
         TELEGRAM_CHAT_ID: chatIdString,
         MANAGER_WHATSAPP: managerWhatsapp,
-        MANAGER_TELEGRAM: managerTelegram
+        MANAGER_TELEGRAM: managerTelegram,
+        CAPTCHA_MODE: captchaMode,
+        TURNSTILE_SITE_KEY: turnstileSiteKey.trim(),
+        TURNSTILE_SECRET_KEY: turnstileSecretKey.trim()
       };
       
       if (username) payload.ADMIN_USERNAME = username;
@@ -339,6 +355,82 @@ export default function AdminSettings() {
                   💡 {t('admin.settings.how_to_get_id')} <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer">@userinfobot</a>. 
                   {t('admin.settings.start_bot_reminder')}
                </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Anti-spam / Captcha Section */}
+        <section className="admin-card">
+          <div className="admin-card-header">
+            <div className="admin-card-icon icon-green">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="admin-card-title">{t('admin.settings.antispam_title')}</h2>
+              <p className="admin-card-subtitle">
+                {t('admin.settings.antispam_subtitle')}
+              </p>
+            </div>
+          </div>
+
+          <div className="admin-settings-grid" style={{ maxWidth: '600px' }}>
+            <div>
+              <label className="admin-label mb-2" htmlFor="captcha-mode">{t('admin.settings.captcha_mode')}</label>
+              <select
+                id="captcha-mode"
+                value={captchaMode}
+                onChange={(e) => setCaptchaMode(e.target.value)}
+                className="admin-input"
+              >
+                <option value="auto">{t('admin.settings.captcha_mode_auto')}</option>
+                <option value="builtin">{t('admin.settings.captcha_mode_builtin')}</option>
+                <option value="turnstile">{t('admin.settings.captcha_mode_turnstile')}</option>
+                <option value="off">{t('admin.settings.captcha_mode_off')}</option>
+              </select>
+            </div>
+            <div>
+              <label className="admin-label mb-2" htmlFor="turnstile-site-key">{t('admin.settings.turnstile_site_key')}</label>
+              <input
+                id="turnstile-site-key"
+                type="text"
+                value={turnstileSiteKey}
+                onChange={(e) => setTurnstileSiteKey(e.target.value)}
+                placeholder="0x4AAAAAAA..."
+                className="admin-input"
+                style={{ fontFamily: 'monospace' }}
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label className="admin-label mb-2" htmlFor="turnstile-secret-key">{t('admin.settings.turnstile_secret_key')}</label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  id="turnstile-secret-key"
+                  type={showSecret ? "text" : "password"}
+                  value={turnstileSecretKey}
+                  onChange={(e) => setTurnstileSecretKey(e.target.value)}
+                  placeholder="0x4AAAAAAA..."
+                  className="admin-input"
+                  style={{ paddingRight: '3rem', fontFamily: 'monospace' }}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecret(!showSecret)}
+                  className="admin-action-icon-btn"
+                  title={showSecret ? "Hide" : "Show"}
+                  style={{ position: 'absolute', right: '0.5rem' }}
+                >
+                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('admin.settings.turnstile_instruction')} <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Cloudflare Turnstile</a>
+              </p>
+            </div>
+
+            <div className="admin-tip">
+              <p>🛡️ {t('admin.settings.antispam_note')}</p>
             </div>
           </div>
         </section>

@@ -109,7 +109,18 @@
       "save_error": "Error saving settings",
       "load_error": "Failed to load settings",
       "id_exists": "ID already added",
-      "copied": "Copied!"
+      "copied": "Copied!",
+      "antispam_title": "Anti-spam & Captcha",
+      "antispam_subtitle": "Protects the contact forms from bots. The built-in captcha needs no setup; Cloudflare Turnstile is an invisible check that requires keys.",
+      "captcha_mode": "Captcha mode",
+      "captcha_mode_auto": "Auto (Turnstile when keys are set, otherwise built-in)",
+      "captcha_mode_builtin": "Built-in image code",
+      "captcha_mode_turnstile": "Cloudflare Turnstile",
+      "captcha_mode_off": "Disable captcha (other protections stay on)",
+      "turnstile_site_key": "Turnstile Site Key",
+      "turnstile_secret_key": "Turnstile Secret Key",
+      "turnstile_instruction": "Create the keys for free in the Cloudflare dashboard → Turnstile → Add widget (domain masynbazar.com). Forms switch to Turnstile right after saving.",
+      "antispam_note": "Always on as well: single-use form tokens, a hidden honeypot field, per-IP rate limits, link and spam-word filters. Suspicious requests are flagged ⚠️ in Telegram, obvious spam is not forwarded."
     },
     "sidebar": {
       "inventory": "Inventory",
@@ -391,6 +402,19 @@
       "error": "Error sending message. Please try again later.",
       "whatsapp_message": "Hello! I am interested in the car {{title}} ({{price}}). Link: {{url}}",
       "whatsapp_message_general": "Hello! I am interested in car selection consultation."
+    },
+    "captcha": {
+      "label": "Confirm you are not a robot",
+      "placeholder": "Code from the image",
+      "image_alt": "Verification code",
+      "refresh": "Refresh code",
+      "loading": "Loading verification...",
+      "load_error": "Could not load the verification.",
+      "retry": "Retry",
+      "error_wrong": "Wrong code from the image. Please try again.",
+      "error_expired": "The verification expired. Enter the new code and submit again.",
+      "error_rate": "Too many requests. Please try later or message us on WhatsApp / Telegram.",
+      "error_unavailable": "Verification is temporarily unavailable. Please message us on WhatsApp or Telegram."
     }
   },
   "youtube": {
@@ -433,12 +457,12 @@
   "filter_used": "Used",
   "filter_new": "New",
   "filter_custom": "Other",
-    "mileage": "Mileage",
-    "horsepower": "Horsepower",
-    "drive_type": "Drive Type",
-    "color": "Color",
-    "condition": "Condition",
-    "color_white": "White",
+  "mileage": "Mileage",
+  "horsepower": "Horsepower",
+  "drive_type": "Drive Type",
+  "color": "Color",
+  "condition": "Condition",
+  "color_white": "White",
   "color_black": "Black",
   "color_silver": "Silver",
   "color_gray": "Gray",

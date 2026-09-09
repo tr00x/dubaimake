@@ -9,6 +9,24 @@ import 'dotenv/config';
 import { Telegraf } from 'telegraf';
 import fs from 'fs';
 import crypto from 'crypto';
+import {
+    createChallenge,
+    validateChallenge,
+    assessContent,
+    isDuplicate,
+    isAllowedOrigin,
+    contactLimiter,
+    contactGlobalLimiter,
+    challengeLimiter,
+    loginLimiter,
+    logContactEvent,
+    clientIp,
+    escapeHtml,
+    truncate,
+    resolveCaptchaMode,
+    SCORE_WARN,
+    SCORE_DROP,
+} from './antispam';
 
 const app = express();
 const prisma = new PrismaClient({
@@ -20,16 +38,23 @@ const prisma = new PrismaClient({
 });
 const PORT = 3001;
 
+// Behind nginx: trust the first proxy hop so req.ip is the real client IP
+app.set('trust proxy', 1);
+
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+    origin: (origin, cb) => cb(null, !origin || isAllowedOrigin(origin)),
+    credentials: true,
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
-// Serve static uploads with caching (1 year)
+// Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-    maxAge: '1y',
-    etag: true,
-    immutable: true
+    maxAge: '0',
+    etag: false,
+    lastModified: false
 }));
 
 // Image Upload Configuration
@@ -126,12 +151,69 @@ const toStringOrEmpty = (v: any) => {
 
 // --- API Routes ---
 
-app.post('/api/contact', async (req, res) => {
-    const { name, contact, message, carTitle, carId, link, carPrice, source, carImage } = req.body;
-    
-    // Validate required fields
-    if (!name || !contact) {
-        return res.status(400).json({ error: 'Name and contact are required' });
+// Issue a signed, single-use challenge (and captcha) for the contact forms.
+app.get('/api/contact/challenge', challengeLimiter, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.json(createChallenge());
+});
+
+const asString = (v: unknown, max: number) => (typeof v === 'string' ? truncate(v.trim(), max) : '');
+
+app.post('/api/contact', contactGlobalLimiter, contactLimiter, async (req, res) => {
+    const ip = clientIp(req);
+    const userAgent = req.get('user-agent');
+    const origin = req.get('origin');
+    const referer = req.get('referer');
+
+    const name = asString(req.body?.name, 120);
+    const contact = asString(req.body?.contact, 200);
+    const message = asString(req.body?.message, 3000);
+    const carTitle = asString(req.body?.carTitle, 200);
+    const carPrice = asString(req.body?.carPrice, 60);
+    const link = asString(req.body?.link, 500);
+    const source = asString(req.body?.source, 100);
+    const carImage = asString(req.body?.carImage, 500);
+    const honeypot = asString(req.body?.website, 500);
+
+    const reject = (status: number, code: string, extra: Record<string, unknown> = {}) => {
+        logContactEvent({ outcome: 'rejected', code, ip, userAgent, origin, referer, source, name, contact, message: truncate(message, 300), ...extra });
+        return res.status(status).json({ error: code });
+    };
+
+    // Origin / Referer must belong to the site when present
+    if (origin && !isAllowedOrigin(origin)) return reject(403, 'bad_origin');
+    if (!origin && referer && !isAllowedOrigin(referer)) return reject(403, 'bad_origin');
+
+    // Honeypot: real users never fill this
+    if (honeypot) return reject(400, 'spam');
+
+    // Basic field validation
+    if (name.length < 2 || !contact || contact.length < 3) {
+        return reject(400, 'invalid_fields');
+    }
+    if (typeof req.body?.message === 'string' && req.body.message.length > 3000) {
+        return reject(400, 'message_too_long');
+    }
+
+    // Challenge token + captcha
+    const challenge = await validateChallenge(req.body, ip);
+    if (!challenge.ok) {
+        const status = challenge.code === 'captcha_unavailable' ? 503 : 400;
+        return reject(status, challenge.code);
+    }
+
+    // Content heuristics
+    const assessment = assessContent({ name, contact, message, userAgent, origin, referer });
+
+    if (assessment.score >= SCORE_DROP) {
+        // Silently drop: bots learn nothing, humans (rare false positives) can still use WhatsApp/Telegram buttons.
+        logContactEvent({ outcome: 'dropped', score: assessment.score, reasons: assessment.reasons, ip, userAgent, origin, referer, source, name, contact, message: truncate(message, 300) });
+        return res.json({ success: true });
+    }
+
+    if (isDuplicate(name, contact, message)) {
+        logContactEvent({ outcome: 'duplicate', ip, userAgent, source, name, contact });
+        return res.json({ success: true });
     }
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -139,91 +221,67 @@ app.post('/api/contact', async (req, res) => {
 
     if (!token || !chatIds || chatIds.length === 0) {
         console.error('Telegram credentials not set');
-        return res.status(500).json({ error: 'Server configuration error' });
+        return res.status(500).json({ error: 'server_config' });
     }
 
-    const isManagerRequest = source === 'Кнопка менеджера (модальное окно)';
+    const isManagerRequest = source === 'Manager Button (Modal)' || source === 'Кнопка менеджера (модальное окно)';
 
-    const title = isManagerRequest 
-        ? '👨‍💼 *Вопрос Менеджеру!*' 
-        : '📩 *Новая заявка с сайта!*';
+    const title = isManagerRequest
+        ? '👨‍💼 <b>Вопрос Менеджеру!</b>'
+        : '📩 <b>Новая заявка с сайта!</b>';
 
-    const text = `
-${title}
-
-👤 *Имя:* ${name}
-📞 *Контакты:* ${contact}
-${carTitle ? `🚗 *Автомобиль:* ${carTitle}` : ''}
-${carPrice ? `💰 *Цена:* ${carPrice}` : ''}
-${(link && isManagerRequest) ? `🔗 [Ссылка на страницу](${link})` : ''}
-
-💬 *Сообщение:*
-${message || 'Без сообщения'}
-    `.trim();
+    const suspicious = assessment.score >= SCORE_WARN;
+    const lines = [
+        title,
+        suspicious ? `⚠️ <i>Возможный спам (score ${assessment.score}: ${escapeHtml(assessment.reasons.join(', '))})</i>` : '',
+        '',
+        `👤 <b>Имя:</b> ${escapeHtml(name)}`,
+        `📞 <b>Контакты:</b> ${escapeHtml(contact)}`,
+        carTitle ? `🚗 <b>Автомобиль:</b> ${escapeHtml(carTitle)}` : '',
+        carPrice ? `💰 <b>Цена:</b> ${escapeHtml(carPrice)}` : '',
+        (link && isManagerRequest && /^https?:\/\//i.test(link)) ? `🔗 <a href="${escapeHtml(link)}">Ссылка на страницу</a>` : '',
+        '',
+        '💬 <b>Сообщение:</b>',
+        escapeHtml(message || 'Без сообщения'),
+        suspicious && ip ? `\n🌐 IP: ${escapeHtml(ip)}` : '',
+    ];
+    const text = lines.filter((l, i) => l !== '' || i === 2 || i === 8).join('\n').trim();
 
     try {
         const bot = new Telegraf(token);
-        
+
         // Resolve photo source once
         let photoSource: string | { source: string } | undefined;
-        // Always try to process carImage if it exists, regardless of source
-        if (carImage) {
-             console.log('Processing carImage:', carImage);
-
-             if (carImage.startsWith('/uploads/')) {
-                 // uploads folder is in root
-                 const localPath = path.join(__dirname, '..', carImage);
-                 if (fs.existsSync(localPath)) {
-                     photoSource = { source: localPath };
-                 } else {
-                     console.log('Uploads file not found:', localPath);
-                 }
-             } else if (carImage.startsWith('/images/')) {
-                 // Public assets folder
-                 // Correctly resolve path to /var/www/masynbazar/public/images/cars/...
-                 // carImage is like "/images/cars/filename.png"
-                 const localPath = path.join(__dirname, '..', 'public', carImage);
-                 console.log('Trying public path:', localPath);
-                 if (fs.existsSync(localPath)) {
-                     photoSource = { source: localPath };
-                 } else {
-                     console.log('Public file not found:', localPath);
-                     
-                     // Fallback: try without leading slash if path join failed unexpectedly
-                     const altPath = path.join(__dirname, '..', 'public', carImage.replace(/^\//, ''));
-                     console.log('Trying alternative public path:', altPath);
-                     if (fs.existsSync(altPath)) {
-                        photoSource = { source: altPath };
-                     }
-                 }
-             } else if (carImage.startsWith('http')) {
-                 photoSource = carImage;
-             } else {
-                 // Try relative path or filename in uploads
-                 const uploadPath = path.join(__dirname, '..', 'uploads', carImage);
-                 if (fs.existsSync(uploadPath)) {
-                     photoSource = { source: uploadPath };
-                 }
-             }
+        if (carImage && !carImage.includes('..') && !carImage.includes('\\')) {
+            if (carImage.startsWith('/uploads/')) {
+                const localPath = path.join(__dirname, carImage);
+                if (fs.existsSync(localPath)) photoSource = { source: localPath };
+                else console.log('Uploads file not found:', localPath);
+            } else if (carImage.startsWith('/images/')) {
+                const localPath = path.join(__dirname, '..', 'public', carImage);
+                if (fs.existsSync(localPath)) photoSource = { source: localPath };
+                else console.log('Public file not found:', localPath);
+            } else if (/^https?:\/\//i.test(carImage)) {
+                photoSource = carImage;
+            } else {
+                const uploadPath = path.join(__dirname, 'uploads', carImage);
+                if (fs.existsSync(uploadPath)) photoSource = { source: uploadPath };
+            }
         }
 
         // Send to all chat IDs
         const results = await Promise.allSettled(chatIds.map(async (chatId) => {
-            const trimmedId = chatId.trim();
-            if (!trimmedId) return;
-
             let sent = false;
             if (photoSource) {
                 try {
-                    await bot.telegram.sendPhoto(trimmedId, photoSource, { caption: text, parse_mode: 'Markdown' });
+                    await bot.telegram.sendPhoto(chatId, photoSource, { caption: truncate(text, 1000), parse_mode: 'HTML' });
                     sent = true;
                 } catch (err) {
-                    console.error(`Error sending photo to ${trimmedId}:`, err);
+                    console.error(`Error sending photo to ${chatId}:`, err);
                 }
             }
-            
             if (!sent) {
-                 await bot.telegram.sendMessage(trimmedId, text, { parse_mode: 'Markdown' });
+                await bot.telegram.sendMessage(chatId, truncate(text, 4000), { parse_mode: 'HTML' });
             }
         }));
 
@@ -232,15 +290,17 @@ ${message || 'Без сообщения'}
             throw new Error('Failed to send to all recipients');
         }
 
+        logContactEvent({ outcome: 'sent', score: assessment.score, reasons: assessment.reasons, captcha: challenge.mode, ip, userAgent, source, name, contact, partial: failures.length > 0 });
         res.json({ success: true, partial: failures.length > 0 });
     } catch (error) {
         console.error('Telegram send error:', error);
-        res.status(500).json({ error: 'Failed to send message' });
+        logContactEvent({ outcome: 'send_failed', ip, source, name, contact, error: String(error) });
+        res.status(500).json({ error: 'send_failed' });
     }
 });
 
 // Auth
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', loginLimiter, (req, res) => {
     const { username, password } = req.body;
 
     const validUsername = process.env.ADMIN_USERNAME || 'admin';
@@ -294,7 +354,7 @@ app.get('/api/admin/env', requireAuth, (req, res) => {
             if (match) {
                 const key = match[1].trim();
                 const value = match[2].trim();
-                if (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'ADMIN_USERNAME', 'MANAGER_WHATSAPP', 'MANAGER_TELEGRAM'].includes(key)) {
+                if (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'ADMIN_USERNAME', 'MANAGER_WHATSAPP', 'MANAGER_TELEGRAM', 'CAPTCHA_MODE', 'TURNSTILE_SITE_KEY', 'TURNSTILE_SECRET_KEY'].includes(key)) {
                     envVars[key] = value;
                 }
             }
@@ -309,7 +369,11 @@ app.get('/api/admin/env', requireAuth, (req, res) => {
 
 app.post('/api/admin/env', requireAuth, (req, res) => {
     try {
-        const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD, MANAGER_WHATSAPP, MANAGER_TELEGRAM } = req.body;
+        const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD, MANAGER_WHATSAPP, MANAGER_TELEGRAM, CAPTCHA_MODE, TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY } = req.body;
+
+        if (CAPTCHA_MODE !== undefined && !['auto', 'builtin', 'turnstile', 'off'].includes(String(CAPTCHA_MODE))) {
+            return res.status(400).json({ error: 'Invalid CAPTCHA_MODE' });
+        }
         const envPath = path.join(__dirname, '..', '.env');
         
         let envContent = '';
@@ -317,14 +381,15 @@ app.post('/api/admin/env', requireAuth, (req, res) => {
             envContent = fs.readFileSync(envPath, 'utf-8');
         }
 
-        const newVars = { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD, MANAGER_WHATSAPP, MANAGER_TELEGRAM };
+        const newVars = { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD, MANAGER_WHATSAPP, MANAGER_TELEGRAM, CAPTCHA_MODE, TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY };
         let newContent = envContent;
 
         Object.entries(newVars).forEach(([key, value]) => {
             if (value === undefined) return;
-            
+            if (typeof value !== 'string' || /[\r\n]/.test(value)) return;
+
             // Update process.env
-            process.env[key] = value as string;
+            process.env[key] = value;
 
             const regex = new RegExp(`^${key}=.*`, 'm');
             if (regex.test(newContent)) {
@@ -347,7 +412,8 @@ app.post('/api/admin/env', requireAuth, (req, res) => {
 app.get('/api/contact-info', (req, res) => {
     res.json({
         whatsapp: process.env.MANAGER_WHATSAPP || '',
-        telegram: process.env.MANAGER_TELEGRAM || ''
+        telegram: process.env.MANAGER_TELEGRAM || '',
+        captcha: resolveCaptchaMode(),
     });
 });
 
@@ -626,4 +692,8 @@ app.post('/api/translations/:lang', requireAuth, (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[antispam] captcha mode: ${resolveCaptchaMode()}`);
+    if (!process.env.JWT_SECRET) {
+        console.warn('[antispam] JWT_SECRET is not set — using an insecure default. Add JWT_SECRET to .env');
+    }
 });

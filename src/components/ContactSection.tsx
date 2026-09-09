@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import client from "../api/client";
 import { toast } from "sonner";
+import { useContactGuard, CaptchaField } from "./ContactGuard";
 
 interface ContactItemProps {
   icon: React.ReactNode;
@@ -36,27 +37,40 @@ export default function ContactSection() {
     email: "",
     message: ""
   });
+  const guard = useContactGuard(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!guard.challenge) {
+      toast.error(t('contact.captcha.error_expired'));
+      guard.refresh();
+      return;
+    }
+    if (!guard.ready) {
+      toast.error(t('contact.captcha.error_wrong'));
+      return;
+    }
     setLoading(true);
 
     try {
       const contactInfo = `Phone: ${formData.phone}${formData.email ? `, Email: ${formData.email}` : ""}`;
-      
+      await guard.waitForMinDelay();
+
       await client.post('/contact', {
         name: formData.name,
         contact: contactInfo,
         message: formData.message,
         link: window.location.href,
         source: 'Contact Form',
+        ...guard.payload(),
       });
 
       toast.success(t('contact.form.success'));
       setFormData({ name: "", phone: "", email: "", message: "" });
+      guard.refresh();
     } catch (error) {
       console.error(error);
-      toast.error(t('contact.form.error'));
+      toast.error(guard.handleError(error, t('contact.form.error')));
     } finally {
       setLoading(false);
     }
@@ -171,9 +185,11 @@ export default function ContactSection() {
                />
             </div>
 
+            <CaptchaField guard={guard} variant="form" />
+
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || guard.loading}
               className="mt-2 h-12 bg-primary text-primary-foreground font-medium rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
             >
               {loading && <Loader2 className="w-5 h-5 animate-spin" />}

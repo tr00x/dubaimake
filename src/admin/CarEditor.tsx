@@ -350,7 +350,6 @@ export default function CarEditor() {
     const getImageUrl = (pathOrUrl: string) => {
         if (pathOrUrl.startsWith('http')) return pathOrUrl;
         const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
-        if (path.startsWith('/uploads')) return `http://localhost:3001${path}`;
         return path;
     };
 

@@ -124,7 +124,7 @@ export default function AdminCarList() {
                                         
                                         // If it's in uploads, it's on the backend (port 3001)
                                         if (path.startsWith('/uploads')) {
-                                            imageUrl = `http://localhost:3001${path}`;
+                                            imageUrl = path;
                                         } else {
                                             // Otherwise it's likely in public/images, served by frontend (port 3000)
                                             imageUrl = path;

@@ -109,7 +109,18 @@
       "save_error": "Ошибка при сохранении настроек",
       "load_error": "Ошибка загрузки настроек",
       "id_exists": "ID уже добавлен",
-      "copied": "Скопировано!"
+      "copied": "Скопировано!",
+      "antispam_title": "Антиспам и капча",
+      "antispam_subtitle": "Защита форм обратной связи от ботов. Встроенная капча работает без настроек; Cloudflare Turnstile — невидимая проверка, нужны ключи.",
+      "captcha_mode": "Режим капчи",
+      "captcha_mode_auto": "Авто (Turnstile, если есть ключи, иначе встроенная)",
+      "captcha_mode_builtin": "Встроенная картинка с кодом",
+      "captcha_mode_turnstile": "Cloudflare Turnstile",
+      "captcha_mode_off": "Выключить капчу (остальная защита работает)",
+      "turnstile_site_key": "Turnstile Site Key",
+      "turnstile_secret_key": "Turnstile Secret Key",
+      "turnstile_instruction": "Ключи создаются бесплатно в панели Cloudflare → Turnstile → Add widget (домен masynbazar.com). После сохранения формы сразу переключатся на Turnstile.",
+      "antispam_note": "Дополнительно всегда работают: одноразовые токены форм, скрытое поле-ловушка, лимиты по IP, фильтр ссылок и спам-слов. Подозрительные заявки помечаются ⚠️ в Telegram, явный спам не отправляется."
     },
     "sidebar": {
       "inventory": "Инвентарь",
@@ -410,6 +421,19 @@
       "error": "Ошибка при отправке сообщения. Пожалуйста, попробуйте позже.",
       "whatsapp_message": "Здравствуйте! Меня интересует автомобиль {{title}} ({{price}}). Ссылка: {{url}}",
       "whatsapp_message_general": "Здравствуйте! Меня интересует консультация по подбору автомобиля."
+    },
+    "captcha": {
+      "label": "Подтвердите, что вы не робот",
+      "placeholder": "Код с картинки",
+      "image_alt": "Проверочный код",
+      "refresh": "Обновить код",
+      "loading": "Загружаем проверку...",
+      "load_error": "Не удалось загрузить проверку.",
+      "retry": "Повторить",
+      "error_wrong": "Неверный код с картинки. Попробуйте ещё раз.",
+      "error_expired": "Проверка устарела. Введите новый код и отправьте снова.",
+      "error_rate": "Слишком много запросов. Попробуйте позже или напишите нам в WhatsApp / Telegram.",
+      "error_unavailable": "Проверка временно недоступна. Напишите нам в WhatsApp или Telegram."
     }
   },
   "youtube": {
