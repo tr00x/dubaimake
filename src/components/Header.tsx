@@ -34,13 +34,28 @@ export default function Header() {
   const onDark = isHome && !scrolled;
 
   useEffect(() => {
+    // Hysteresis: only react to deliberate scrolling (>= 24px in one direction),
+    // never near the top, so the bar does not flicker around a threshold.
+    let acc = 0;
+    let ticking = false;
     const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 24);
-      // Hide when scrolling down past the hero, show as soon as the user scrolls up.
-      const goingDown = y > lastY.current && y > 320;
-      setHidden(goingDown && !menuOpen && !searchOpen);
-      lastY.current = y;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const dy = y - lastY.current;
+        lastY.current = y;
+        setScrolled(y > 24);
+        if (menuOpen || searchOpen || y < 160) {
+          acc = 0;
+          setHidden(false);
+        } else {
+          acc = Math.sign(dy) === Math.sign(acc) ? acc + dy : dy;
+          if (acc > 24) setHidden(true);
+          else if (acc < -24) setHidden(false);
+        }
+        ticking = false;
+      });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -50,6 +65,15 @@ export default function Header() {
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
+
+  // Let sticky elements (car page bar, consultation card) follow the header as it hides/shows.
+  useEffect(() => {
+    const height = window.innerWidth >= 768 ? 80 : 72;
+    document.documentElement.style.setProperty("--header-offset", hidden ? "0px" : `${height}px`);
+    return () => {
+      document.documentElement.style.removeProperty("--header-offset");
+    };
+  }, [hidden]);
 
   const toggleLanguage = () => i18n.changeLanguage(isRu ? "en" : "ru");
 

@@ -26,7 +26,10 @@ export function scrollToHash(id: string, { smooth = true, maxWaitMs = 1600 }: { 
     }
     const top = Math.max(0, Math.round(el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET));
     if (lastTop === null || Math.abs(top - lastTop) > 2) {
-      window.scrollTo({ top, behavior: smooth && !prefersReducedMotion() ? "smooth" : "auto" });
+      // First move is smooth; later corrections (content loaded, layout shifted) are instant so
+      // two smooth scrolls never fight each other.
+      const behavior: ScrollBehavior = lastTop === null && smooth && !prefersReducedMotion() ? "smooth" : "instant";
+      window.scrollTo({ top, behavior });
       lastTop = top;
       stableTicks = 0;
     } else {

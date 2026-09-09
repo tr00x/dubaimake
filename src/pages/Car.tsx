@@ -119,6 +119,9 @@ export default function CarPage() {
   const [similarCars, setSimilarCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  // Index of the image currently painted; lags behind activeImageIndex until the next image is decoded,
+  // so flipping never shows an empty frame while the network loads.
+  const [shownIndex, setShownIndex] = useState(0);
   const [showSticky, setShowSticky] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
 
@@ -201,6 +204,7 @@ export default function CarPage() {
         .then(res => {
           setCar(res.data);
           setActiveImageIndex(0); // Reset image index on car change
+          setShownIndex(0);
         })
         .catch(err => console.error("Failed to fetch car", err))
         .finally(() => setLoading(false));
@@ -223,6 +227,30 @@ export default function CarPage() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Preload the requested image (and its neighbours) before crossfading to it.
+  const imageUrls = car?.images?.length ? car.images.map(i => i.pathOrUrl) : [imgBmwM5Competition];
+  useEffect(() => {
+    let cancelled = false;
+    const target = imageUrls[activeImageIndex];
+    if (!target) return;
+    const preload = (src: string) => {
+      const img = new Image();
+      img.src = src;
+      return img.decode ? img.decode().catch(() => undefined) : Promise.resolve();
+    };
+    preload(target).finally(() => {
+      if (!cancelled) setShownIndex(activeImageIndex);
+    });
+    const next = imageUrls[(activeImageIndex + 1) % imageUrls.length];
+    const prev = imageUrls[(activeImageIndex - 1 + imageUrls.length) % imageUrls.length];
+    if (next) void preload(next);
+    if (prev && prev !== next) void preload(prev);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeImageIndex, car?.id]);
 
   if (loading) {
     return (
@@ -325,7 +353,8 @@ export default function CarPage() {
       <AnimatePresence>
         {showSticky && (
           <motion.div
-            className="sticky top-[72px] z-40"
+            className="sticky z-40"
+            style={{ top: "calc(var(--header-offset, 80px) + 12px)", transition: "top 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
@@ -392,15 +421,18 @@ export default function CarPage() {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <motion.img
-            key={activeImageIndex}
-            src={images[activeImageIndex]}
-            alt={title}
-            className="h-full w-full object-cover"
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: EASE }}
-          />
+          <AnimatePresence initial={false} mode="sync">
+            <motion.img
+              key={shownIndex}
+              src={images[shownIndex]}
+              alt={title}
+              className="absolute inset-0 h-full w-full object-cover"
+              initial={{ opacity: 0, scale: 1.03 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45, ease: EASE }}
+            />
+          </AnimatePresence>
 
           <button
             type="button"
@@ -496,7 +528,10 @@ export default function CarPage() {
         </motion.div>
 
         <motion.div className="lg:col-span-5" variants={itemVariants}>
-          <div className="grain sticky top-28 flex flex-col gap-6 overflow-hidden rounded-3xl bg-ink p-7 text-white md:p-8">
+          <div
+            className="grain sticky flex flex-col gap-6 overflow-hidden rounded-3xl bg-ink p-7 text-white md:p-8"
+            style={{ top: "calc(var(--header-offset, 80px) + 24px)", transition: "top 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}
+          >
             <div className="relative flex flex-col gap-3">
               <span className="eyebrow eyebrow--light">{t('car_page.consultation')}</span>
               <p className="text-lg font-semibold leading-snug">{t('car_page.consultation_desc')}</p>

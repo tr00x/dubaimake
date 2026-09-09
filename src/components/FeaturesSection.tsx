@@ -2,6 +2,7 @@ import React from "react";
 import { CheckCircle2, FileText, Clock, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Reveal, Stagger, Item } from "./motion/Reveal";
+import LivingBackdrop from "./motion/LivingBackdrop";
 
 interface FeatureItem {
   icon: React.ReactNode;
@@ -37,13 +38,10 @@ export default function FeaturesSection() {
 
   return (
     <section className="relative overflow-hidden bg-surface">
-      {/* Ambient brand highlight */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 right-[-10%] h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle_at_center,oklch(0.56_0.19_24_/_8%),transparent_70%)] blur-2xl"
-      />
+      {/* Living topographic backdrop: drifting contours + pointer-following glow */}
+      <LivingBackdrop />
 
-      <div className="section container-x relative">
+      <div className="section container-x relative z-10">
         <Reveal className="max-w-2xl">
           <span className="eyebrow">{t('features.subtitle')}</span>
           <h2 className="display-lg mt-4">{t('features.title')}</h2>

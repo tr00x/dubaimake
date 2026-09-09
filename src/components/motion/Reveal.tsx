@@ -16,15 +16,20 @@ export const EASE = [0.22, 1, 0.36, 1] as const;
 
 export const DURATION: { fast: number; base: number; slow: number } = {
   fast: 0.45,
-  base: 0.8,
-  slow: 1.2,
+  base: 0.7,
+  slow: 1.1,
 };
 
-const makeFadeUp = (reduced: boolean, y: number = 28, duration: number = DURATION.base): Variants => ({
-  hidden: reduced ? { opacity: 0 } : { opacity: 0, y, filter: "blur(6px)" },
+/** IntersectionObserver settings shared by every scroll reveal: start a little before the element is fully in view. */
+export const VIEWPORT = { once: true, amount: 0.1, margin: "0px 0px -40px 0px" } as const;
+
+// Opacity + translate only: animating `filter: blur()` repaints large surfaces every frame and
+// flickers over images and backdrop-filter chips.
+const makeFadeUp = (reduced: boolean, y: number = 20, duration: number = DURATION.base): Variants => ({
+  hidden: reduced ? { opacity: 0 } : { opacity: 0, y },
   visible: {
     opacity: 1,
-    ...(reduced ? {} : { y: 0, filter: "blur(0px)" }),
+    ...(reduced ? {} : { y: 0 }),
     transition: { duration, ease: EASE },
   },
 });
@@ -42,16 +47,16 @@ type RevealProps = HTMLMotionProps<"div"> & {
   duration?: number;
 };
 
-export function Reveal({ children, delay = 0, y = 28, amount = 0.2, once = true, duration = DURATION.base as number, ...rest }: RevealProps) {
+export function Reveal({ children, delay = 0, y = 20, amount = VIEWPORT.amount, once = true, duration = DURATION.base as number, ...rest }: RevealProps) {
   const reduced = !!useReducedMotion();
   const variants = makeFadeUp(reduced, y, duration);
+  if (delay) (variants.visible as any).transition = { duration, ease: EASE, delay };
   return (
     <motion.div
       initial="hidden"
       whileInView="visible"
-      viewport={{ once, amount, margin: "0px 0px -8% 0px" }}
+      viewport={{ once, amount, margin: VIEWPORT.margin }}
       variants={variants}
-      transition={{ delay }}
       {...rest}
     >
       {children}
@@ -71,7 +76,7 @@ type StaggerProps = HTMLMotionProps<"div"> & {
   onMount?: boolean;
 };
 
-export function Stagger({ children, stagger = 0.08, delayChildren = 0.05, amount = 0.15, once = true, onMount = false, ...rest }: StaggerProps) {
+export function Stagger({ children, stagger = 0.07, delayChildren = 0.04, amount = VIEWPORT.amount, once = true, onMount = false, ...rest }: StaggerProps) {
   const container: Variants = {
     hidden: {},
     visible: { transition: { staggerChildren: stagger, delayChildren } },
@@ -79,7 +84,7 @@ export function Stagger({ children, stagger = 0.08, delayChildren = 0.05, amount
   return (
     <motion.div
       initial="hidden"
-      {...(onMount ? { animate: "visible" } : { whileInView: "visible", viewport: { once, amount, margin: "0px 0px -8% 0px" } })}
+      {...(onMount ? { animate: "visible" } : { whileInView: "visible", viewport: { once, amount, margin: VIEWPORT.margin } })}
       variants={container}
       {...rest}
     >
@@ -91,7 +96,7 @@ export function Stagger({ children, stagger = 0.08, delayChildren = 0.05, amount
 type ItemProps = HTMLMotionProps<"div"> & { children?: React.ReactNode; y?: number; duration?: number };
 
 /** A child of <Stagger>. */
-export function Item({ children, y = 28, duration = DURATION.base as number, ...rest }: ItemProps) {
+export function Item({ children, y = 20, duration = DURATION.base as number, ...rest }: ItemProps) {
   const reduced = !!useReducedMotion();
   return (
     <motion.div variants={makeFadeUp(reduced, y, duration)} {...rest}>

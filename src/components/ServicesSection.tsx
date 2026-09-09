@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
-import { Reveal, Stagger, Item, EASE } from "./motion/Reveal";
+import { Reveal, EASE } from "./motion/Reveal";
 import {
   SalesIcon,
   SearchIcon,
@@ -99,9 +99,15 @@ export default function ServicesSection() {
     }
   };
 
-  const exitVariant = reduced
-    ? { opacity: 0, transition: { duration: 0.2 } }
-    : { opacity: 0, y: -16, filter: "blur(6px)", transition: { duration: 0.35, ease: EASE } };
+  const rowVariants = {
+    hidden: reduced ? { opacity: 0 } : { opacity: 0, y: 20 },
+    visible: (i: number) => ({
+      opacity: 1,
+      ...(reduced ? {} : { y: 0 }),
+      transition: { duration: 0.7, ease: EASE, delay: Math.min(i, 5) * 0.06 },
+    }),
+    exit: reduced ? { opacity: 0, transition: { duration: 0.15 } } : { opacity: 0, y: -12, transition: { duration: 0.25, ease: EASE } },
+  };
 
   return (
     <section id="services" className="section container-x scroll-mt-24">
@@ -117,13 +123,17 @@ export default function ServicesSection() {
       </Reveal>
 
       {/* Numbered service list */}
-      <Stagger layout className="mt-14 grid grid-cols-1 gap-x-16 md:mt-16 lg:grid-cols-2">
-        <AnimatePresence mode="popLayout" initial={false}>
+      <div className="mt-14 grid grid-cols-1 gap-x-16 md:mt-16 lg:grid-cols-2">
+        <AnimatePresence initial={false}>
           {visibleServices.map((service, index) => (
-            <Item
+            <motion.div
               key={service.title}
-              layout
-              exit={exitVariant}
+              custom={index}
+              variants={rowVariants}
+              initial="hidden"
+              whileInView="visible"
+              exit="exit"
+              viewport={{ once: true, amount: 0.1, margin: "0px 0px -40px 0px" }}
               className="group grid grid-cols-[auto_1fr] gap-5 border-b border-border py-7 md:gap-7 md:py-8"
             >
               <div className="flex flex-col items-center gap-3 pt-1">
@@ -145,10 +155,10 @@ export default function ServicesSection() {
                   ))}
                 </div>
               </div>
-            </Item>
+            </motion.div>
           ))}
         </AnimatePresence>
-      </Stagger>
+      </div>
 
       <div className="mt-10 flex justify-center md:mt-12">
         <button

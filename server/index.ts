@@ -9,6 +9,8 @@ import 'dotenv/config';
 import { Telegraf } from 'telegraf';
 import fs from 'fs';
 import crypto from 'crypto';
+import dns from 'dns';
+import { getFeed, startYoutubeFeed, CHANNEL_ID } from './youtube';
 import {
     createChallenge,
     validateChallenge,
@@ -27,6 +29,9 @@ import {
     SCORE_WARN,
     SCORE_DROP,
 } from './antispam';
+
+// Prefer IPv4: the VPS has no working IPv6 and YouTube resolves to both.
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 const prisma = new PrismaClient({
@@ -589,65 +594,35 @@ app.post('/api/upload/images', requireAuth, upload.array('images'), (req, res) =
     res.json({ paths: uploadPaths });
 });
 
-// YouTube Videos Proxy
+// YouTube channel feed (scraped + RSS, cached on the server; see server/youtube.ts)
+app.get('/api/youtube', async (req, res) => {
+    try {
+        const data = await getFeed();
+        if (!data) return res.status(503).json({ error: 'youtube_unavailable' });
+        res.set('Cache-Control', 'public, max-age=300');
+        res.json(data);
+    } catch (error) {
+        console.error('YouTube feed error:', error);
+        res.status(500).json({ error: 'Failed to fetch videos' });
+    }
+});
+
+// Legacy shape kept for older clients / cached PWA bundles
 app.get('/api/youtube-videos', async (req, res) => {
     try {
-        const CHANNEL_ID = 'UCoMu2BkIcQHKkUy9dr3gNdQ';
-        const url = `https://www.youtube.com/channel/${CHANNEL_ID}/videos`;
-        
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept-Language': 'en-US,en;q=0.9',
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`YouTube responded with ${response.status}`);
-        }
-
-        const html = await response.text();
-        
-        // Extract ytInitialData
-        const match = html.match(/var ytInitialData = ({.*?});/s);
-        if (!match || !match[1]) {
-            throw new Error('Could not find ytInitialData');
-        }
-
-        const data = JSON.parse(match[1]);
-        
-        // Traverse JSON to find video items
-        // Path: contents.twoColumnBrowseResultsRenderer.tabs[1].tabRenderer.content.richGridRenderer.contents
-        const tabs = data.contents?.twoColumnBrowseResultsRenderer?.tabs;
-        const videosTab = tabs?.find((t: any) => t.tabRenderer?.title === 'Videos' || t.tabRenderer?.content?.richGridRenderer);
-        
-        if (!videosTab) {
-            throw new Error('Could not find Videos tab');
-        }
-
-        const contents = videosTab.tabRenderer.content.richGridRenderer.contents;
-        
-        const videos = contents
-            .filter((item: any) => item.richItemRenderer?.content?.videoRenderer)
-            .map((item: any) => {
-                const video = item.richItemRenderer.content.videoRenderer;
-                return {
-                    id: video.videoId,
-                    title: video.title?.runs?.[0]?.text,
-                    thumbnail: video.thumbnail?.thumbnails?.[video.thumbnail.thumbnails.length - 1]?.url, // High res
-                    date: video.publishedTimeText?.simpleText || 'Recently',
-                    viewCount: video.viewCountText?.simpleText,
-                    length: video.lengthText?.simpleText
-                };
-            })
-            // Extra filter for Shorts just in case (though /videos tab usually excludes them)
-            .filter((v: any) => v.id && v.title); 
-
-        // Return top 20 videos
-        res.json(videos.slice(0, 20));
-
+        const data = await getFeed();
+        if (!data) return res.status(503).json({ error: 'youtube_unavailable' });
+        res.set('Cache-Control', 'public, max-age=300');
+        res.json(data.videos.slice(0, 20).map(v => ({
+            id: v.id,
+            title: v.title,
+            thumbnail: v.thumbnail,
+            date: v.publishedText || v.publishedAt || '',
+            viewCount: v.viewsText,
+            length: v.duration,
+        })));
     } catch (error) {
-        console.error('YouTube fetch error:', error);
+        console.error('YouTube feed error:', error);
         res.status(500).json({ error: 'Failed to fetch videos' });
     }
 });
@@ -695,6 +670,8 @@ const HOST = process.env.HOST || '127.0.0.1';
 app.listen(PORT, HOST, () => {
     console.log(`Server running on http://${HOST}:${PORT}`);
     console.log(`[antispam] captcha mode: ${resolveCaptchaMode()}`);
+    startYoutubeFeed();
+    console.log(`[youtube] feed for channel ${CHANNEL_ID} warming up`);
     if (!process.env.JWT_SECRET) {
         console.warn('[antispam] JWT_SECRET is not set — using an insecure default. Add JWT_SECRET to .env');
     }

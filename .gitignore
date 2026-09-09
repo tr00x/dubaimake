@@ -10,3 +10,4 @@ server/uploads
 *.db
 prisma/*.db
 server/logs
+server/cache
