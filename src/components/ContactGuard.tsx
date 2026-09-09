@@ -284,17 +284,18 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
       )}
 
       {challenge?.captcha.type === "image" && (
-        <div className={compact ? "space-y-1" : "flex flex-col gap-2"}>
-          <label htmlFor={inputId} className={compact ? "sr-only" : "text-sm font-medium text-foreground"}>
+        <div className="flex flex-col gap-2.5">
+          <label htmlFor={inputId} className={compact ? "text-xs font-semibold text-muted-foreground" : "text-sm font-medium text-foreground"}>
             {t("contact.captcha.label")}
           </label>
-          <div className={compact ? "flex items-center gap-2" : "flex flex-col sm:flex-row sm:items-center gap-3"}>
-            <div className="flex items-center gap-2 shrink-0">
+          <div className={`flex flex-col gap-3 ${compact ? "" : "sm:flex-row sm:items-stretch"}`}>
+            <div className="flex items-stretch gap-2">
               <div
-                className="rounded-lg overflow-hidden border border-border bg-[#f4f4f5] select-none"
+                className={`flex-1 select-none overflow-hidden rounded-xl border border-border bg-[#f4f4f5] [&_svg]:block [&_svg]:h-full [&_svg]:w-full ${
+                  compact ? "h-16 max-w-[240px]" : "h-[76px] sm:w-[240px] sm:flex-none"
+                }`}
                 role="img"
                 aria-label={t("contact.captcha.image_alt")}
-                style={{ width: compact ? 128 : 170, height: compact ? 42 : 56 }}
                 dangerouslySetInnerHTML={{ __html: challenge.captcha.svg }}
               />
               <button
@@ -303,29 +304,13 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
                 disabled={loading}
                 aria-label={t("contact.captcha.refresh")}
                 title={t("contact.captcha.refresh")}
-                className="w-9 h-9 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50 flex items-center justify-center transition-colors disabled:opacity-50"
+                className={`flex shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50 ${compact ? "h-16 w-14" : "h-[76px] w-16"}`}
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
               </button>
             </div>
-            {compact ? (
-              <div className="flex-1 bg-background rounded-lg border border-foreground/20 focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground/20 transition-all flex items-center gap-3 px-3 h-10 shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-muted-foreground" />
-                <input
-                  id={inputId}
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder={t("contact.captcha.placeholder")}
-                  autoComplete="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  inputMode="text"
-                  maxLength={8}
-                  required
-                  className={inputClass}
-                />
-              </div>
-            ) : (
+            <div className="relative flex-1">
+              <ShieldCheck className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 id={inputId}
                 value={answer}
@@ -337,9 +322,9 @@ export function CaptchaField({ guard, variant = "form" }: CaptchaFieldProps) {
                 inputMode="text"
                 maxLength={8}
                 required
-                className={inputClass}
+                className={`w-full rounded-xl border border-border bg-background pl-12 pr-4 text-lg font-semibold tracking-[0.2em] text-foreground outline-none transition-all placeholder:text-base placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring ${compact ? "h-14" : "h-[76px]"}`}
               />
-            )}
+            </div>
           </div>
         </div>
       )}

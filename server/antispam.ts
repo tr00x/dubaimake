@@ -153,15 +153,16 @@ export const createChallenge = (): ChallengeResponse => {
     const iat = Date.now();
 
     if (mode === 'builtin') {
+        // Large, high-contrast glyphs (dark greys on light grey), light noise — legible on phones.
         const captcha = svgCaptcha.create({
             size: 5,
-            noise: 3,
-            ignoreChars: '0oO1ilIjJ',
-            color: true,
+            noise: 2,
+            ignoreChars: '0oO1ilIjJQq',
+            color: false,
             background: '#f4f4f5',
-            width: 170,
-            height: 56,
-            fontSize: 46,
+            width: 260,
+            height: 84,
+            fontSize: 64,
         });
         return {
             token: encodeToken({ n: nonce, iat, c: answerHash(nonce, captcha.text), m: mode }),
