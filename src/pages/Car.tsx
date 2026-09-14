@@ -306,7 +306,9 @@ export default function CarPage() {
     return (
       <div className="container-x flex flex-col gap-10 pt-24 pb-24 md:gap-14 md:pt-32 md:pb-32">
         <div className="skeleton h-8 w-2/3 max-w-md rounded-xl" />
-        <div className="skeleton aspect-[16/9] w-full rounded-3xl" />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className="skeleton aspect-[16/9] w-full rounded-3xl lg:col-span-7" />
+        </div>
       </div>
     );
   }
@@ -363,8 +365,9 @@ export default function CarPage() {
   const bodyTypeStr = bodyType || "";
   const colorStr = color || "";
 
+  // On lg+ the tiles sit in a narrow column beside the gallery, so they switch to a compact horizontal layout.
   const SpecTile = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="flex min-w-0 flex-col gap-3 rounded-2xl bg-surface p-4 md:p-5">
+    <div className="flex min-w-0 flex-col gap-3 rounded-2xl bg-surface p-4 md:p-5 lg:flex-row lg:items-center lg:gap-4 lg:p-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background shadow-sm">
         <Icon className="h-5 w-5 text-muted-foreground" />
       </div>
@@ -463,99 +466,102 @@ export default function CarPage() {
         </div>
       </motion.div>
 
-      {/* Gallery */}
-      <motion.div className="flex flex-col gap-4" variants={itemVariants}>
-        <div
-          className="relative aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-3xl bg-surface-2 md:aspect-[16/9]"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <LayeredImage src={images[activeImageIndex]} alt={title} />
-
-          <button
-            type="button"
-            onClick={handlePrevImage}
-            className="icon-btn absolute left-4 top-1/2 z-10 -translate-y-1/2 border-white/40 bg-white/85 text-ink backdrop-blur-md"
-            aria-label={t('car_page.prev_image')}
+      {/* Gallery + tech specs: stacked on small screens, side by side on lg+ so the photo and its thumbnails fit on screen */}
+      <div className="grid grid-cols-1 gap-10 md:gap-14 lg:grid-cols-12 lg:gap-8">
+        {/* Gallery */}
+        <motion.div className="flex min-w-0 flex-col gap-4 lg:col-span-7" variants={itemVariants}>
+          <div
+            className="relative aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-3xl bg-surface-2 md:aspect-[16/9]"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={handleNextImage}
-            className="icon-btn absolute right-4 top-1/2 z-10 -translate-y-1/2 border-white/40 bg-white/85 text-ink backdrop-blur-md"
-            aria-label={t('car_page.next_image')}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+            <LayeredImage src={images[activeImageIndex]} alt={title} />
 
-          <span className="chip chip--glass nums absolute bottom-4 right-4 z-10">
-            {activeImageIndex + 1} / {images.length}
-          </span>
-        </div>
+            <button
+              type="button"
+              onClick={handlePrevImage}
+              className="icon-btn absolute left-4 top-1/2 z-10 -translate-y-1/2 border-white/40 bg-white/85 text-ink backdrop-blur-md"
+              aria-label={t('car_page.prev_image')}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNextImage}
+              className="icon-btn absolute right-4 top-1/2 z-10 -translate-y-1/2 border-white/40 bg-white/85 text-ink backdrop-blur-md"
+              aria-label={t('car_page.next_image')}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
 
-        <div className="px-1">
-          <Carousel
-            setApi={setApi}
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-2 md:-ml-4 lg:-ml-6">
-              {images.map((src, idx) => (
-                <CarouselItem key={idx} className="basis-1/2 pl-2 sm:basis-1/3 md:basis-1/4 md:pl-4 lg:pl-6">
-                  <div className="relative w-full p-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveImageIndex(idx);
-                        api?.scrollTo(idx);
-                      }}
-                      aria-current={idx === activeImageIndex}
-                      className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                        idx === activeImageIndex
-                          ? "opacity-100 ring-2 ring-ink ring-offset-2"
-                          : "opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <img
-                        src={src}
-                        alt={`${title} ${idx + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    </button>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="hidden md:block">
-              <CarouselPrevious className="-left-4 lg:-left-12" />
-              <CarouselNext className="-right-4 lg:-right-12" />
-            </div>
-          </Carousel>
-        </div>
-      </motion.div>
+            <span className="chip chip--glass nums absolute bottom-4 right-4 z-10">
+              {activeImageIndex + 1} / {images.length}
+            </span>
+          </div>
 
-      {/* Tech specs */}
-      <motion.div className="flex flex-col gap-5" variants={itemVariants}>
-        <h2 className="display-md">{t('catalog.tech_specs')}</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
-          {topSpeedStr ? <SpecTile icon={Gauge} label={t('car_card.speed')} value={topSpeedStr} /> : null}
-          {accelStr ? <SpecTile icon={Timer} label={t('car_card.acceleration')} value={accelStr} /> : null}
-          {hpStr ? <SpecTile icon={Zap} label={t('car_card.power')} value={hpStr} /> : null}
-          {fuelType ? <SpecTile icon={Fuel} label={t('catalog.fuel_type')} value={fuelType} /> : null}
-          {transmission ? <SpecTile icon={Cog} label={t('catalog.transmission')} value={transmission} /> : null}
-          {bodyTypeStr ? <SpecTile icon={CarFront} label={t('catalog.body_type')} value={bodyTypeStr} /> : null}
-          {engineCapacityStr ? <SpecTile icon={EngineIcon} label={t('catalog.engine_capacity')} value={engineCapacityStr} /> : null}
-          {driveTypeStr ? <SpecTile icon={DrivetrainIcon} label={t('catalog.drive_type')} value={driveTypeStr} /> : null}
-          {colorStr ? <SpecTile icon={Palette} label={t('catalog.color')} value={colorStr} /> : null}
-          {mileageStr ? <SpecTile icon={Route} label={t('catalog.mileage')} value={mileageStr} /> : null}
-          {condition ? <SpecTile icon={BadgeCheck} label={t('car_page.condition')} value={condition} /> : null}
-        </div>
-      </motion.div>
+          <div className="px-1">
+            <Carousel
+              setApi={setApi}
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {images.map((src, idx) => (
+                  <CarouselItem key={idx} className="basis-1/2 pl-2 sm:basis-1/3 md:basis-1/4 md:pl-4 lg:basis-1/5">
+                    <div className="relative w-full p-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveImageIndex(idx);
+                          api?.scrollTo(idx);
+                        }}
+                        aria-current={idx === activeImageIndex}
+                        className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                          idx === activeImageIndex
+                            ? "opacity-100 ring-2 ring-ink ring-offset-2"
+                            : "opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={src}
+                          alt={`${title} ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="hidden md:block">
+                <CarouselPrevious className="-left-4" />
+                <CarouselNext className="-right-4" />
+              </div>
+            </Carousel>
+          </div>
+        </motion.div>
+
+        {/* Tech specs */}
+        <motion.div className="flex min-w-0 flex-col gap-5 lg:col-span-5" variants={itemVariants}>
+          <h2 className="display-md">{t('catalog.tech_specs')}</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-2 lg:gap-3">
+            {topSpeedStr ? <SpecTile icon={Gauge} label={t('car_card.speed')} value={topSpeedStr} /> : null}
+            {accelStr ? <SpecTile icon={Timer} label={t('car_card.acceleration')} value={accelStr} /> : null}
+            {hpStr ? <SpecTile icon={Zap} label={t('car_card.power')} value={hpStr} /> : null}
+            {fuelType ? <SpecTile icon={Fuel} label={t('catalog.fuel_type')} value={fuelType} /> : null}
+            {transmission ? <SpecTile icon={Cog} label={t('catalog.transmission')} value={transmission} /> : null}
+            {bodyTypeStr ? <SpecTile icon={CarFront} label={t('catalog.body_type')} value={bodyTypeStr} /> : null}
+            {engineCapacityStr ? <SpecTile icon={EngineIcon} label={t('catalog.engine_capacity')} value={engineCapacityStr} /> : null}
+            {driveTypeStr ? <SpecTile icon={DrivetrainIcon} label={t('catalog.drive_type')} value={driveTypeStr} /> : null}
+            {colorStr ? <SpecTile icon={Palette} label={t('catalog.color')} value={colorStr} /> : null}
+            {mileageStr ? <SpecTile icon={Route} label={t('catalog.mileage')} value={mileageStr} /> : null}
+            {condition ? <SpecTile icon={BadgeCheck} label={t('car_page.condition')} value={condition} /> : null}
+          </div>
+        </motion.div>
+      </div>
 
       {/* Description + consultation */}
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
