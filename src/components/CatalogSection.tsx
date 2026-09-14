@@ -75,7 +75,8 @@ interface Car {
   condition_en?: string;
 }
 
-const PREVIEW_LIMIT = 9;
+// 12 fills complete rows in the 2-, 3- and 4-column grid layouts
+const PREVIEW_LIMIT = 12;
 const SKELETON_COUNT = 8;
 const GRID_CLASSES = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6";
 
@@ -499,7 +500,12 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
             </button>
           </div>
         ) : (
-          <Stagger className={GRID_CLASSES}>
+          <Stagger
+            className={GRID_CLASSES}
+            // Reveal as soon as the grid enters view: on mobile the 1-column grid is thousands of px tall,
+            // so the default 10% threshold leaves the area under the filters blank until the user scrolls.
+            amount={0}
+          >
             {displayCars.map((car, idx) => {
               const mainImage = car.images?.find((i) => i.isMain)?.pathOrUrl || car.images?.[0]?.pathOrUrl || imgBmwM5Competition;
 
@@ -522,11 +528,9 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
                 tag.trim().toLowerCase() !== transmission.toLowerCase()
               );
 
-              const isFeatured = mode === 'preview' && idx === 0;
-
               // Transform DB data to UI props
               return (
-                <Item key={`${car.id}-${idx}`} className={cn("h-full", isFeatured && "lg:col-span-2 lg:row-span-2")}>
+                <Item key={`${car.id}-${idx}`} className="h-full">
                   <CarCard
                     id={car.id}
                     title={title}
@@ -535,7 +539,6 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
                     year={car.year}
                     meta={meta}
                     tags={filteredTags.slice(0, 3)}
-                    variant={isFeatured ? 'featured' : 'default'}
                     details={{
                       mileage: car.mileage ? `${car.mileage.toLocaleString()} km` : undefined,
                       engineCapacity: car.engineCapacity,
