@@ -130,8 +130,7 @@
       "admin_user": "Administrator",
       "super_admin": "Super Admin",
       "expand": "Expand",
-      "collapse": "Collapse",
-      "showroom": "Showroom"
+      "collapse": "Collapse"
     },
     "translation_editor": {
       "title": "Translation Editor",
@@ -170,26 +169,7 @@
     "add_image_url_hint": "Or paste an image link",
     "add_image_url_hint_text": "Direct links to JPG, PNG and WebP are supported",
     "back_to_list": "Back to list",
-    "retry": "Retry",
-    "showroom": {
-      "title": "Showroom",
-      "desc": "Which cars spin in the 3D showroom above the catalog, and in what order",
-      "in_showroom": "In the showroom",
-      "available": "All cars",
-      "add": "Add",
-      "remove": "Remove",
-      "move_up": "Move up",
-      "move_down": "Move down",
-      "save": "Save showroom",
-      "saved": "Showroom saved",
-      "save_error": "Could not save the showroom",
-      "load_error": "Could not load the list",
-      "min_hint": "Pick 3 to 10 cars. With fewer than three the showroom falls back to automatic selection (Hot and New first).",
-      "empty": "The showroom is empty — add cars from the list on the right",
-      "search_placeholder": "Search by name...",
-      "hidden_badge": "Hidden",
-      "max_reached": "Maximum 10 cars"
-    }
+    "retry": "Retry"
   },
   "header": {
     "youtube": "YouTube",
@@ -536,12 +516,6 @@
   "pwa": {
     "update_available": "A new version of the site is available.",
     "update_action": "Refresh"
-  },
-  "showroom": {
-    "title": "3D showroom",
-    "drag_hint": "Drag to rotate",
-    "swipe_hint": "Swipe to rotate · tap a car to open it",
-    "open": "Open"
   },
   "cities": {
     "dubai": "Dubai",

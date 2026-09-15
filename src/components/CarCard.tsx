@@ -18,8 +18,6 @@ export type CarCardProps = {
   price: string;
   id: string;
   year?: number;
-  /** `featured` gets a taller image on large screens and bigger type — used for the first card in the preview grid. */
-  variant?: "default" | "featured";
 };
 
 /** Tag labels that mean "hot deal" across locales/data sources — rendered with the brand chip instead of glass. */
@@ -35,10 +33,8 @@ export function CarCard({
   price,
   id,
   year,
-  variant = "default",
 }: CarCardProps) {
   const { t } = useTranslation();
-  const featured = variant === "featured";
   const hasDetails = Boolean(details && (details.mileage || details.engineCapacity || details.driveType));
 
   return (
@@ -47,13 +43,7 @@ export function CarCard({
       className="surface-card group flex h-full flex-col overflow-hidden rounded-[1.25rem] active:scale-[0.98]"
     >
       {/* Image */}
-      <div
-        className={cn(
-          "relative w-full overflow-hidden bg-surface-2",
-          // featured spans two grid rows on lg+: the image grows to fill the extra height
-          featured ? "aspect-[4/3] lg:aspect-auto lg:min-h-[360px] lg:flex-1" : "aspect-[4/3]",
-        )}
-      >
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
         <img
           src={image}
           alt={title}
@@ -79,26 +69,11 @@ export function CarCard({
             </span>
           ))}
         </div>
-
-        {/* Hover CTA arrow */}
-        <div
-          className="pointer-events-none absolute bottom-3 right-3 flex h-9 w-9 translate-y-2 items-center justify-center rounded-full bg-white text-ink opacity-0 shadow-md transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100"
-          aria-hidden="true"
-        >
-          <ArrowRight className="h-4 w-4" />
-        </div>
       </div>
 
       {/* Body */}
-      <div className={cn("flex flex-col gap-3 p-5", featured ? "flex-1 lg:flex-none" : "flex-1")}>
-        <h3
-          className={cn(
-            "line-clamp-2 text-foreground",
-            featured
-              ? "display-md"
-              : "font-sans text-[1.15rem] font-bold leading-snug tracking-[-0.01em]",
-          )}
-        >
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <h3 className="line-clamp-2 font-sans text-[1.15rem] font-bold leading-snug tracking-[-0.01em] text-foreground">
           {title}
         </h3>
 
@@ -164,12 +139,7 @@ export function CarCard({
 
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between gap-3 pt-1">
-          <span
-            className={cn(
-              "nums font-display font-medium tracking-tight text-foreground",
-              featured ? "text-[1.75rem]" : "text-[1.35rem]",
-            )}
-          >
+          <span className="nums font-display text-[1.35rem] font-medium tracking-tight text-foreground">
             {price}
           </span>
           <span
@@ -185,11 +155,10 @@ export function CarCard({
 }
 
 /** Loading placeholder matching CarCard's proportions. */
-export function CarCardSkeleton({ variant = "default" }: { variant?: "default" | "featured" }) {
-  const featured = variant === "featured";
+export function CarCardSkeleton() {
   return (
     <div className="surface-card flex flex-col overflow-hidden rounded-[1.25rem]" aria-hidden="true">
-      <div className={cn("skeleton w-full rounded-none", featured ? "aspect-[4/3] lg:aspect-auto lg:min-h-[360px] lg:flex-1" : "aspect-[4/3]")} />
+      <div className="skeleton aspect-[4/3] w-full rounded-none" />
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="skeleton h-5 w-4/5 rounded-lg" />
         <div className="flex gap-1.5">

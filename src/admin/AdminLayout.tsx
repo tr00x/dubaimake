@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import client from "../api/client";
 import {
     Car,
-    Sparkles,
     Settings,
     LogOut,
     User,
@@ -81,15 +80,6 @@ export default function AdminLayout() {
                 >
                     <Car className="admin-nav-icon" />
                     <span className={collapsed ? 'hidden' : ''}>{t('admin.sidebar.inventory')}</span>
-                </Link>
-                <Link
-                    to="/admin/showroom"
-                    className={`admin-nav-item ${isActive('/admin/showroom') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    title={collapsed ? t('admin.sidebar.showroom') : ""}
-                >
-                    <Sparkles className="admin-nav-icon" />
-                    <span className={collapsed ? 'hidden' : ''}>{t('admin.sidebar.showroom')}</span>
                 </Link>
                 <Link
                     to="/admin/translations"
